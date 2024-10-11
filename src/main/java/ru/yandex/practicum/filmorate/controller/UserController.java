@@ -54,6 +54,7 @@ public class UserController {
         log.debug("Updated user in Map.");
         return user;
     }
+
     private long getNextId() {
         long currentMaxId = users.keySet()
                 .stream()
