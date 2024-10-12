@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.model;
 
 import jakarta.validation.constraints.*;
 import lombok.Data;
+import ru.yandex.practicum.filmorate.validation.LoginConstraint;
 
 import java.time.LocalDate;
 
@@ -12,6 +13,7 @@ public class User {
     @Email
     private String email;
     @NotBlank
+    @LoginConstraint
     private String login;
     private String name;
     @PastOrPresent

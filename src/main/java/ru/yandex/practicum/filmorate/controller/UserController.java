@@ -24,9 +24,6 @@ public class UserController {
 
     @PostMapping
     public User createUser(@Valid @RequestBody User user) {
-        if (user.getLogin().contains(" ")) {
-            throw new ValidationException("Login must not contain spaces");
-        }
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
             log.debug("Set user's login as name.");
@@ -42,9 +39,6 @@ public class UserController {
     public User updateUser(@Valid @RequestBody User user) {
         if (!users.containsKey(user.getId())) {
             throw new NotFoundException("User id not found");
-        }
-        if (user.getLogin().contains(" ")) {
-            throw new ValidationException("Login must not contain spaces");
         }
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
