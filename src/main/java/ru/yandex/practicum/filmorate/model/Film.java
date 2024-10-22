@@ -6,9 +6,10 @@ import ru.yandex.practicum.filmorate.validation.DescriptionConstraint;
 import ru.yandex.practicum.filmorate.validation.ReleaseDateConstraint;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 @Data
-public class Film {
+public class Film implements Comparable<Film> {
     private long id;
     @NotBlank
     private String name;
@@ -18,4 +19,10 @@ public class Film {
     LocalDate releaseDate;
     @Positive
     int duration;
+    Set<Long> likes;
+
+    @Override
+    public int compareTo(Film film) {
+        return this.getLikes().size() - film.getLikes().size();
+    }
 }

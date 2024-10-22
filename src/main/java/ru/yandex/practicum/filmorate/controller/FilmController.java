@@ -1,51 +1,59 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.service.FilmService;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
-@Slf4j
 @RestController
 @RequestMapping("/films")
 public class FilmController {
-    private final Map<Long, Film> films = new HashMap<>();
+    private final FilmService filmService;
+
+    public FilmController(FilmService filmService) {
+        this.filmService = filmService;
+    }
 
     @GetMapping
     public Collection<Film> getFilms() {
-        return films.values();
+        return filmService.getFilms();
+    }
+
+    @GetMapping(value = "/popular")
+    public Collection<Film> getPopularFilms(@RequestParam(defaultValue = "10") long count) {
+        return filmService.getPopularFilms(count);
     }
 
     @PostMapping
     public Film createFilm(@Valid @RequestBody Film film) {
-        film.setId(getNextId());
-        log.debug("Set id to film.");
-        films.put(film.getId(), film);
-        log.debug("Put film to Map.");
-        return film;
+        return filmService.createFilm(film);
     }
 
     @PutMapping
     public Film updateFilm(@Valid @RequestBody Film film) {
-        if (!films.containsKey(film.getId())) {
-            throw new NotFoundException("Film id not found");
-        }
-        films.replace(film.getId(), film);
-        log.debug("Updated film in Map.");
-        return film;
+        return filmService.updateFilm(film);
     }
 
-    private long getNextId() {
-        long currentMaxId = films.keySet()
-                .stream()
-                .mapToLong(id -> id)
-                .max()
-                .orElse(0);
-        return ++currentMaxId;
+    @PutMapping(value = "/{id}/like/{userId}")
+    public void addLike(@PathVariable String id,
+                        @PathVariable String userId) {
+        try {
+            filmService.addLike(Long.parseLong(id), Long.parseLong(userId));
+        } catch (NumberFormatException e) {
+            throw new ConditionsNotMetException("id должен быть числом.");
+        }
+    }
+
+    @DeleteMapping(value = "/{id}/like/{userId}")
+    public void deleteLike(@PathVariable String id,
+                        @PathVariable String userId) {
+        try {
+            filmService.deleteLike(Long.parseLong(id), Long.parseLong(userId));
+        } catch (NumberFormatException e) {
+            throw new ConditionsNotMetException("id должен быть числом.");
+        }
     }
 }
