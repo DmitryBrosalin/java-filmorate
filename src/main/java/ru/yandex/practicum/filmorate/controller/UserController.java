@@ -2,7 +2,6 @@ package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exception.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
 
@@ -34,50 +33,30 @@ public class UserController {
     }
 
     @GetMapping(value = "/{id}")
-    public User findUser(@PathVariable String id) {
-        try {
-            return userService.findUser(Long.parseLong(id)).get();
-        } catch (NumberFormatException e) {
-            throw new ConditionsNotMetException("id пользователя должен быть числом.");
-        }
+    public User findUser(@PathVariable long id) {
+        return userService.findUser(id).get();
     }
 
     @GetMapping(value = "/{id}/friends")
-    public Set<User> findFriends(@PathVariable String id) {
-        try {
-            return userService.getFriends(Long.parseLong(id));
-        } catch (NumberFormatException e) {
-            throw new ConditionsNotMetException("id пользователя должен быть числом.");
-        }
+    public Set<User> findFriends(@PathVariable long id) {
+        return userService.getFriends(id);
     }
 
     @PutMapping(value = "/{id}/friends/{friendId}")
-    public void addFriend(@PathVariable String id,
-                          @PathVariable String friendId) {
-        try {
-            userService.addFriend(Long.parseLong(id), Long.parseLong(friendId));
-        } catch (NumberFormatException e) {
-            throw new ConditionsNotMetException("id пользователя должен быть числом.");
-        }
+    public void addFriend(@PathVariable long id,
+                          @PathVariable long friendId) {
+        userService.addFriend(id, friendId);
     }
 
     @DeleteMapping(value = "/{id}/friends/{friendId}")
-    public void deleteFriend(@PathVariable String id,
-                             @PathVariable String friendId) {
-        try {
-            userService.deleteFriend(Long.parseLong(id), Long.parseLong(friendId));
-        } catch (NumberFormatException e) {
-            throw new ConditionsNotMetException("id пользователя должен быть числом.");
-        }
+    public void deleteFriend(@PathVariable long id,
+                             @PathVariable long friendId) {
+        userService.deleteFriend(id, friendId);
     }
 
     @GetMapping(value = "/{id}/friends/common/{otherId}")
-    public Set<User> findCommonFriends(@PathVariable String id,
-                                       @PathVariable String otherId) {
-        try {
-            return userService.findCommonFriends(Long.parseLong(id), Long.parseLong(otherId));
-        } catch (NumberFormatException e) {
-            throw new ConditionsNotMetException("id пользователя должен быть числом.");
-        }
+    public Set<User> findCommonFriends(@PathVariable long id,
+                                       @PathVariable long otherId) {
+        return userService.findCommonFriends(id, otherId);
     }
 }

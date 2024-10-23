@@ -2,7 +2,6 @@ package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exception.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
@@ -38,22 +37,14 @@ public class FilmController {
     }
 
     @PutMapping(value = "/{id}/like/{userId}")
-    public void addLike(@PathVariable String id,
-                        @PathVariable String userId) {
-        try {
-            filmService.addLike(Long.parseLong(id), Long.parseLong(userId));
-        } catch (NumberFormatException e) {
-            throw new ConditionsNotMetException("id должен быть числом.");
-        }
+    public void addLike(@PathVariable long id,
+                        @PathVariable long userId) {
+        filmService.addLike(id, userId);
     }
 
     @DeleteMapping(value = "/{id}/like/{userId}")
-    public void deleteLike(@PathVariable String id,
-                        @PathVariable String userId) {
-        try {
-            filmService.deleteLike(Long.parseLong(id), Long.parseLong(userId));
-        } catch (NumberFormatException e) {
-            throw new ConditionsNotMetException("id должен быть числом.");
-        }
+    public void deleteLike(@PathVariable long id,
+                        @PathVariable long userId) {
+        filmService.deleteLike(id, userId);
     }
 }

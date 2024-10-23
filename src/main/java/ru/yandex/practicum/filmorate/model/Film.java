@@ -6,6 +6,7 @@ import ru.yandex.practicum.filmorate.validation.DescriptionConstraint;
 import ru.yandex.practicum.filmorate.validation.ReleaseDateConstraint;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.Set;
 
 @Data
@@ -16,10 +17,10 @@ public class Film implements Comparable<Film> {
     @DescriptionConstraint
     private String description;
     @ReleaseDateConstraint
-    LocalDate releaseDate;
+    private LocalDate releaseDate;
     @Positive
-    int duration;
-    Set<Long> likes;
+    private int duration;
+    private Set<Long> likes = new HashSet<>();
 
     @Override
     public int compareTo(Film film) {

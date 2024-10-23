@@ -26,6 +26,7 @@ public class InMemoryFilmStorage implements FilmStorage {
     public Collection<Film> getPopularFilms(long size) {
         return films.values().stream()
                 .sorted(Comparator.reverseOrder())
+                .limit(size)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
@@ -41,7 +42,6 @@ public class InMemoryFilmStorage implements FilmStorage {
     @Override
     public Film createFilm(Film film) {
         film.setId(getNextId());
-        film.setLikes(new HashSet<>());
         films.put(film.getId(), film);
         return film;
     }
@@ -50,9 +50,6 @@ public class InMemoryFilmStorage implements FilmStorage {
     public Film updateFilm(Film film) {
         if (!films.containsKey(film.getId())) {
             throw new NotFoundException("Фильм с id = " + film.getId() + " не найден.");
-        }
-        if (film.getLikes() == null) {
-            film.setLikes(new HashSet<>());
         }
         films.replace(film.getId(), film);
         return film;
