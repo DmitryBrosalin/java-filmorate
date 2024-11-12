@@ -1,50 +1,51 @@
 package ru.yandex.practicum.filmorate.service;
 
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dal.FilmRepository;
+import ru.yandex.practicum.filmorate.dal.UserRepository;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.util.Collection;
 
 @Service
 public class FilmService {
-    private final FilmStorage filmStorage;
-    private final UserService userService;
+    private final FilmRepository filmRepository;
+    private final UserRepository userRepository;
 
-    public FilmService(FilmStorage filmStorage, UserService userService) {
-        this.filmStorage = filmStorage;
-        this.userService = userService;
+    public FilmService(FilmRepository filmRepository, UserRepository userRepository) {
+        this.filmRepository = filmRepository;
+        this.userRepository = userRepository;
     }
 
     public void addLike(long filmId, long userId) {
-        if (filmStorage.getFilm(filmId).isPresent() && userService.findUser(userId).isPresent()) {
-            getFilm(filmId).getLikes().add(userId);
+        if (filmRepository.findById(filmId) != null && userRepository.findById(userId) != null) {
+            filmRepository.addLike(filmId, userId);
         }
     }
 
     public void deleteLike(long filmId, long userId) {
-        if (filmStorage.getFilm(filmId).isPresent() && userService.findUser(userId).isPresent()) {
-            getFilm(filmId).getLikes().remove(userId);
+        if (filmRepository.findById(filmId) != null && userRepository.findById(userId) != null) {
+            filmRepository.deleteLike(filmId, userId);
         }
     }
 
     public Collection<Film> getFilms() {
-        return filmStorage.getFilms();
+        return filmRepository.findAll();
     }
 
     public Collection<Film> getPopularFilms(long size) {
-        return filmStorage.getPopularFilms(size);
+        return filmRepository.getPopularFilms(size);
     }
 
     public Film getFilm(long id) {
-        return filmStorage.getFilm(id).get();
+        return filmRepository.findById(id);
     }
 
     public Film createFilm(Film film) {
-        return filmStorage.createFilm(film);
+        return filmRepository.save(film);
     }
 
     public Film updateFilm(Film film) {
-        return filmStorage.updateFilm(film);
+        return filmRepository.update(film);
     }
 }
