@@ -7,6 +7,7 @@ import ru.yandex.practicum.filmorate.dal.mapper.FilmRowMapper;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.Date;
@@ -30,11 +31,14 @@ public class FilmRepository extends BaseRepository<Film> {
             "(SELECT DISTINCT film_id FROM likes GROUP BY (FILM_ID) ORDER BY COUNT (FILM_ID) DESC LIMIT ?);";
     private final GenreRepository genreRepository;
     private final UserRepository userRepository;
+    private final MpaRepository mpaRepository;
 
-    public FilmRepository(JdbcTemplate jdbc, FilmRowMapper mapper, GenreRepository genreRepository, UserRepository userRepository) {
+    public FilmRepository(JdbcTemplate jdbc, FilmRowMapper mapper, GenreRepository genreRepository,
+                          UserRepository userRepository, MpaRepository mpaRepository) {
         super(jdbc, mapper);
         this.genreRepository = genreRepository;
         this.userRepository = userRepository;
+        this.mpaRepository = mpaRepository;
     }
 
     public Film findById(long filmId) {
@@ -117,6 +121,10 @@ public class FilmRepository extends BaseRepository<Film> {
         return userRepository.findMany(FIND_LIKES_BY_ID_QUERY, filmId).stream().map(User::getId).collect(Collectors.toSet());
     }
 
+    private Mpa findMpa(int mpaId) {
+        return mpaRepository.getMpaById(mpaId);
+    }
+
     public void addLike(long filmId, long userId) {
         try {
             insertPair(INSERT_LIKE_QUERY, filmId, userId);
@@ -138,6 +146,7 @@ public class FilmRepository extends BaseRepository<Film> {
     private Film prepareForResponse(Film film) {
         film.setGenres(new TreeSet<>(findGenres(film.getId())));
         film.setLikes(findLikes(film.getId()));
+        film.setMpa(findMpa(film.getMpa().getId()));
         return film;
     }
 }
