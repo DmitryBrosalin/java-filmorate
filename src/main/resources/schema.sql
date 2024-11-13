@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS mpa_rating (
-	mpa INTEGER PRIMARY KEY,
+	mpa_id INTEGER PRIMARY KEY,
 	name VARCHAR(50) NOT NULL
 );
 
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS films (
 	description VARCHAR(200) NOT NULL,
 	release_date DATE NOT NULL,
 	duration INTEGER NOT NULL,
-	mpa INTEGER REFERENCES mpa_rating (mpa)
+	mpa_id INTEGER REFERENCES mpa_rating (mpa_id)
 );
 
 CREATE TABLE IF NOT EXISTS likes (

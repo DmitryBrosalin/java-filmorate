@@ -18,14 +18,16 @@ public class FilmRepository extends BaseRepository<Film> {
     private static final String FIND_ALL_QUERY = "SELECT * FROM films";
     private static final String FIND_BY_ID_QUERY = "SELECT * FROM films WHERE film_id = ?";
     private static final String INSERT_QUERY = "INSERT INTO films (title, description, release_date, " +
-            "duration, mpa) VALUES (?, ?, ?, ?, ?)";
+            "duration, mpa_id) VALUES (?, ?, ?, ?, ?)";
     private static final String UPDATE_QUERY = "UPDATE films SET title = ?, description = ?, release_date = ?, " +
-            "duration = ?, mpa = ? WHERE film_id = ?";
+            "duration = ?, mpa_id = ? WHERE film_id = ?";
     private static final String INSERT_GENRE_QUERY = "INSERT INTO film_genres (film_id, genre_id) VALUES (?, ?)";
     private static final String INSERT_LIKE_QUERY = "INSERT INTO likes (film_id, user_id) VALUES (?, ?)";
     private static final String FIND_LIKES_BY_ID_QUERY = "SELECT * FROM users WHERE user_id IN " +
             "(SELECT user_id FROM likes WHERE film_id = ?)";
     private static final String DELETE_LIKE_QUERY = "DELETE FROM likes WHERE (film_id = ? AND user_id = ?)";
+    private static final String FIND_POPULAR_QUERY = "SELECT * FROM films WHERE film_id IN " +
+            "(SELECT DISTINCT film_id FROM likes GROUP BY (FILM_ID) ORDER BY COUNT (FILM_ID) DESC LIMIT ?);";
     private final GenreRepository genreRepository;
     private final UserRepository userRepository;
 
@@ -39,9 +41,7 @@ public class FilmRepository extends BaseRepository<Film> {
         Optional<Film> filmOpt = findOne(FIND_BY_ID_QUERY, filmId);
         if (filmOpt.isPresent()) {
             Film film = filmOpt.get();
-            film.setGenres(new TreeSet<>(findGenres(filmId)));
-            film.setLikes(findLikes(filmId));
-            return film;
+            return prepareForResponse(film);
         } else {
             throw new NotFoundException("Фильм с id = " + filmId + " не найден");
         }
@@ -49,8 +49,7 @@ public class FilmRepository extends BaseRepository<Film> {
 
     public List<Film> findAll() {
         return findMany(FIND_ALL_QUERY).stream()
-                .peek(film -> film.setGenres(findGenres(film.getId())))
-                .peek(film -> film.setLikes(findLikes(film.getId())))
+                .peek(this::prepareForResponse)
                 .collect(Collectors.toList());
     }
 
@@ -127,10 +126,18 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     public Collection<Film> getPopularFilms(long size) {
-        return findAll().stream().sorted(Comparator.reverseOrder()).limit(size).collect(Collectors.toList());
+        return findMany(FIND_POPULAR_QUERY, size).stream()
+                .peek(this::prepareForResponse)
+                .collect(Collectors.toList());
     }
 
     public void deleteLike(long filmId, long userId) {
         delete(DELETE_LIKE_QUERY, filmId, userId);
+    }
+
+    private Film prepareForResponse(Film film) {
+        film.setGenres(new TreeSet<>(findGenres(film.getId())));
+        film.setLikes(findLikes(film.getId()));
+        return film;
     }
 }
