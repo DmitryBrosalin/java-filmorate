@@ -58,14 +58,7 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     public Film save(Film film) {
-        if ((film.getMpa() != null) && (film.getMpa().getId() < 1 || film.getMpa().getId() > 5)) {
-            throw new BadRequestException("id MPA-рейтинга должен быть от 1 до 5.");
-        }
-        for (Genre genre: film.getGenres()) {
-            if ((genre != null) && (genre.getId() < 1 || genre.getId() > 6)) {
-                throw new BadRequestException("id жанра должен быть от 1 до 6.");
-            }
-        }
+        checkFilmMpaAndGenres(film);
         film.setGenres(new TreeSet<>(film.getGenres()));
         long id = insert(INSERT_QUERY,
                 film.getName(),
@@ -75,21 +68,14 @@ public class FilmRepository extends BaseRepository<Film> {
                 film.getMpa().getId());
         film.setId(id);
         insertGenres(id, film.getGenres());
-        return film;
+        return prepareForResponse(film);
     }
 
     public Film update(Film film) {
         if (findOne(FIND_BY_ID_QUERY, film.getId()).isEmpty()) {
             throw new NotFoundException("Фильм с id = " + film.getId() + " не найден.");
         }
-        if ((film.getMpa() != null) && (film.getMpa().getId() < 1 || film.getMpa().getId() > 5)) {
-            throw new BadRequestException("id MPA-рейтинга должен быть от 1 до 5.");
-        }
-        for (Genre genre: film.getGenres()) {
-            if ((genre != null) && (genre.getId() < 1 || genre.getId() > 6)) {
-                throw new BadRequestException("id жанра должен быть от 1 до 6.");
-            }
-        }
+        checkFilmMpaAndGenres(film);
         film.setLikes(findLikes(film.getId()));
         update(UPDATE_QUERY,
                 film.getName(),
@@ -148,5 +134,24 @@ public class FilmRepository extends BaseRepository<Film> {
         film.setLikes(findLikes(film.getId()));
         film.setMpa(findMpa(film.getMpa().getId()));
         return film;
+    }
+
+    private void checkFilmMpaAndGenres(Film film) {
+        if (film.getMpa() != null) {
+            try {
+                findMpa(film.getMpa().getId());
+            } catch (RuntimeException e) {
+                throw new BadRequestException("id MPA-рейтинга должен быть от 1 до 5.");
+            }
+        }
+        for (Genre genre: film.getGenres()) {
+            if (genre != null) {
+                try {
+                    genreRepository.findById(genre.getId());
+                } catch (RuntimeException e) {
+                    throw new BadRequestException("id жанра должен быть от 1 до 6.");
+                }
+            }
+        }
     }
 }
