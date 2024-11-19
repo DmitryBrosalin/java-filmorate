@@ -5,12 +5,13 @@ import lombok.Data;
 import ru.yandex.practicum.filmorate.validation.DescriptionConstraint;
 import ru.yandex.practicum.filmorate.validation.ReleaseDateConstraint;
 
+import java.io.Serializable;
 import java.time.LocalDate;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeSet;
 
 @Data
-public class Film implements Comparable<Film> {
+public class Film implements Comparable<Film>, Serializable {
     private long id;
     @NotBlank
     private String name;
@@ -20,7 +21,9 @@ public class Film implements Comparable<Film> {
     private LocalDate releaseDate;
     @Positive
     private int duration;
-    private Set<Long> likes = new HashSet<>();
+    private Mpa mpa;
+    private Set<Genre> genres = new TreeSet<>();
+    private Set<Long> likes = new TreeSet<>();
 
     @Override
     public int compareTo(Film film) {
