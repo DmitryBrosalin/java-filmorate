@@ -39,6 +39,7 @@ public class FilmRepository extends BaseRepository<Film> {
             "GROUP BY (film_id) \n" +
             "ORDER BY COUNT (film_id) DESC \n" +
             "LIMIT ?);";
+    private static final String DELETE_FILM_QUERY = "DELETE FROM films WHERE (film_id = ?)";
     private final GenreRepository genreRepository;
     private final UserRepository userRepository;
     private final MpaRepository mpaRepository;
@@ -142,6 +143,10 @@ public class FilmRepository extends BaseRepository<Film> {
 
     public void deleteLike(long filmId, long userId) {
         delete(DELETE_LIKE_QUERY, filmId, userId);
+    }
+
+    public void deleteFilm(long filmId) {
+        delete(DELETE_FILM_QUERY, filmId);
     }
 
     private Film prepareForResponse(Film film) {

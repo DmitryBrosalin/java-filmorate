@@ -48,4 +48,8 @@ public class FilmService {
     public Film updateFilm(Film film) {
         return filmRepository.update(film);
     }
+
+    public void deleteFilm(long filmId) {
+        filmRepository.deleteFilm(filmId);
+    }
 }

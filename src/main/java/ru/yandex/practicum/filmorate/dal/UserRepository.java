@@ -25,6 +25,7 @@ public class UserRepository extends BaseRepository<User> {
     private static final String DELETE_FRIEND_QUERY = "DELETE FROM friends WHERE user_id = ? AND friend_id = ?";
     private static final String FIND_ALL_FRIENDS_QUERY = "SELECT * FROM users WHERE user_id IN " +
             "(SELECT friend_id FROM friends WHERE user_id = ?)";
+    private static final String DELETE_USER_QUERY = "DELETE FROM users WHERE user_id = ?";
 
     public UserRepository(JdbcTemplate jdbc, UserRowMapper mapper) {
         super(jdbc, mapper);
@@ -99,5 +100,9 @@ public class UserRepository extends BaseRepository<User> {
                 .peek(user -> {
                     for (User friend: findFriends(user.getId())) user.getFriends().add(friend.getId()); })
                 .collect(Collectors.toList());
+    }
+
+    public void deleteUser(long userId) {
+        delete(DELETE_USER_QUERY, userId);
     }
 }
