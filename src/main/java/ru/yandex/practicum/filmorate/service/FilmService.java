@@ -33,8 +33,8 @@ public class FilmService {
         return filmRepository.findAll();
     }
 
-    public Collection<Film> getPopularFilms(long size) {
-        return filmRepository.getPopularFilms(size);
+    public Collection<Film> getPopularFilms(long size, Integer genreId, Integer year) {
+        return filmRepository.getPopularFilms(size, genreId, year);
     }
 
     public Film getFilm(long id) {
