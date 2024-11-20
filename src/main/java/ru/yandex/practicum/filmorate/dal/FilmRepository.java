@@ -29,6 +29,16 @@ public class FilmRepository extends BaseRepository<Film> {
     private static final String DELETE_LIKE_QUERY = "DELETE FROM likes WHERE (film_id = ? AND user_id = ?)";
     private static final String FIND_POPULAR_QUERY = "SELECT * FROM films WHERE film_id IN " +
             "(SELECT DISTINCT film_id FROM likes GROUP BY (FILM_ID) ORDER BY COUNT (FILM_ID) DESC LIMIT ?);";
+    private static final String FIND_POPULAR_BY_GENRE_AND_YEAR = "SELECT *\n" +
+            "FROM films f \n" +
+            "JOIN film_genres f2 ON f.film_id = f2.film_id \n" +
+            "JOIN genres g ON f2.genre_id = g.genre_id \n" +
+            "WHERE EXTRACT(YEAR FROM f.release_date) = ?\n" +
+            "AND f2.genre_id = ? AND f.film_id IN (SELECT DISTINCT film_id \n" +
+            "FROM likes \n" +
+            "GROUP BY (film_id) \n" +
+            "ORDER BY COUNT (film_id) DESC \n" +
+            "LIMIT ?);";
     private final GenreRepository genreRepository;
     private final UserRepository userRepository;
     private final MpaRepository mpaRepository;
@@ -119,8 +129,13 @@ public class FilmRepository extends BaseRepository<Film> {
         }
     }
 
-    public Collection<Film> getPopularFilms(long size) {
-        return findMany(FIND_POPULAR_QUERY, size).stream()
+    public Collection<Film> getPopularFilms(long size, Integer genreId, Integer year) {
+        if (genreId == null || year == null) {
+            return findMany(FIND_POPULAR_QUERY, size).stream()
+                    .peek(this::prepareForResponse)
+                    .collect(Collectors.toList());
+        }
+        return findMany(FIND_POPULAR_BY_GENRE_AND_YEAR, year, genreId, size).stream()
                 .peek(this::prepareForResponse)
                 .collect(Collectors.toList());
     }
