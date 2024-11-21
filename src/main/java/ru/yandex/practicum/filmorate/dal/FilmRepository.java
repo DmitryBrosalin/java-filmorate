@@ -42,6 +42,11 @@ public class FilmRepository extends BaseRepository<Film> {
             "ORDER BY COUNT (film_id) DESC \n" +
             "LIMIT ?);";
     private static final String DELETE_FILM_QUERY = "DELETE FROM films WHERE (film_id = ?)";
+    private static final String FIND_COMMON_FILMS = "SELECT *\n" +
+            "FROM films AS f\n" +
+            "WHERE f.film_id IN (SELECT film_id FROM likes AS l WHERE l.user_id = ?)\n" +
+            "AND f.film_id IN (SELECT film_id FROM likes AS l WHERE l.user_id = ?)\n" +
+            "AND f.film_id IN (SELECT DISTINCT film_id FROM likes GROUP BY (film_id) ORDER BY COUNT (film_id) DESC);";
     private final GenreRepository genreRepository;
     private final UserRepository userRepository;
     private final MpaRepository mpaRepository;
@@ -175,5 +180,11 @@ public class FilmRepository extends BaseRepository<Film> {
                 }
             }
         }
+    }
+
+    public Collection<Film> getCommonFilms(long userId, long friendId) {
+        return findMany(FIND_COMMON_FILMS, userId, friendId).stream()
+                .peek(this::prepareForResponse)
+                .collect(Collectors.toList());
     }
 }

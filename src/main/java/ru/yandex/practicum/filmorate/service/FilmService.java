@@ -52,4 +52,8 @@ public class FilmService {
     public void deleteFilm(long filmId) {
         filmRepository.deleteFilm(filmId);
     }
+
+    public Collection<Film> getCommonFilms(long userId, long friendId) {
+        return filmRepository.getCommonFilms(userId, friendId);
+    }
 }
