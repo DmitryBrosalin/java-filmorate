@@ -8,6 +8,8 @@ import ru.yandex.practicum.filmorate.storage.review.ReviewStorage;
 
 import java.util.Collection;
 
+//Спринт 12 Отзывы
+
 @Service
 @Slf4j
 public class ReviewService {

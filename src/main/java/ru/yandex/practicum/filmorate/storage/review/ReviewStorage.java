@@ -17,6 +17,8 @@ import ru.yandex.practicum.filmorate.model.Review;
 import java.util.Collection;
 import java.util.List;
 
+//Спринт 12 Отзывы
+
 @Repository
 @Qualifier("reviewStorage")
 @Slf4j

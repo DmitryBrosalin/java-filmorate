@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS friends (
 	friend_id LONG REFERENCES users (user_id) ON DELETE CASCADE,
     CONSTRAINT friends_pk PRIMARY KEY (user_id, friend_id)
 );
-
+--Добавление таблиц add reviews
 CREATE TABLE IF NOT EXISTS review (
     review_id SERIAL PRIMARY KEY,
     content VARCHAR(500) NOT NULL,

@@ -8,6 +8,8 @@ import ru.yandex.practicum.filmorate.service.ReviewService;
 
 import java.util.Collection;
 
+//Спринт 12 Отзывы
+
 @Slf4j
 @RestController
 @RequestMapping("/reviews")

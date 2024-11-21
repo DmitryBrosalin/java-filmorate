@@ -2,6 +2,8 @@ package ru.yandex.practicum.filmorate.model;
 
 import lombok.*;
 
+//Спринт 12 Отзывы
+
 @Getter
 @Setter
 @Data
