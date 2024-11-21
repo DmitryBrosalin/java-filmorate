@@ -42,3 +42,23 @@ CREATE TABLE IF NOT EXISTS friends (
 	friend_id LONG REFERENCES users (user_id) ON DELETE CASCADE,
     CONSTRAINT friends_pk PRIMARY KEY (user_id, friend_id)
 );
+
+CREATE TABLE IF NOT EXISTS review (
+    review_id SERIAL PRIMARY KEY,
+    content VARCHAR(500) NOT NULL,
+    is_positive BOOLEAN,
+    user_id INTEGER NOT NULL,
+    film_id INTEGER NOT NULL,
+    useful INTEGER DEFAULT 0,
+    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    CONSTRAINT fk_film FOREIGN KEY (film_id) REFERENCES films(film_id) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS review_likes (
+    review_id INT NOT NULL,
+    user_id INT NOT NULL,
+    like_status INT NOT NULL,
+    PRIMARY KEY (review_id, user_id),
+    FOREIGN KEY (review_id) REFERENCES review (review_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE
+);
+
