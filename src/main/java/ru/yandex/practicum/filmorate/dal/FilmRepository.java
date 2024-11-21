@@ -27,8 +27,10 @@ public class FilmRepository extends BaseRepository<Film> {
     private static final String FIND_LIKES_BY_ID_QUERY = "SELECT * FROM users WHERE user_id IN " +
             "(SELECT user_id FROM likes WHERE film_id = ?)";
     private static final String DELETE_LIKE_QUERY = "DELETE FROM likes WHERE (film_id = ? AND user_id = ?)";
-    private static final String FIND_POPULAR_QUERY = "SELECT * FROM films WHERE film_id IN " +
-            "(SELECT DISTINCT film_id FROM likes GROUP BY (FILM_ID) ORDER BY COUNT (FILM_ID) DESC LIMIT ?);";
+    private static final String FIND_POPULAR_QUERY = "SELECT f.FILM_ID , f.TITLE , f.DESCRIPTION , f.RELEASE_DATE , f.DURATION , f.MPA_ID \n" +
+            "FROM films AS f\n" +
+            "LEFT JOIN likes AS l ON f.FILM_ID = l.FILM_ID\n" +
+            "GROUP BY (f.FILM_ID) ORDER BY COUNT (f.FILM_ID) DESC LIMIT ?";
     private static final String FIND_POPULAR_BY_GENRE_AND_YEAR = "SELECT *\n" +
             "FROM films f \n" +
             "JOIN film_genres f2 ON f.film_id = f2.film_id \n" +
@@ -39,6 +41,7 @@ public class FilmRepository extends BaseRepository<Film> {
             "GROUP BY (film_id) \n" +
             "ORDER BY COUNT (film_id) DESC \n" +
             "LIMIT ?);";
+    private static final String DELETE_FILM_QUERY = "DELETE FROM films WHERE (film_id = ?)";
     private final GenreRepository genreRepository;
     private final UserRepository userRepository;
     private final MpaRepository mpaRepository;
@@ -142,6 +145,10 @@ public class FilmRepository extends BaseRepository<Film> {
 
     public void deleteLike(long filmId, long userId) {
         delete(DELETE_LIKE_QUERY, filmId, userId);
+    }
+
+    public void deleteFilm(long filmId) {
+        delete(DELETE_FILM_QUERY, filmId);
     }
 
     private Film prepareForResponse(Film film) {
