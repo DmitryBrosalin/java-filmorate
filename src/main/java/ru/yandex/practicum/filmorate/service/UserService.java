@@ -1,20 +1,26 @@
 package ru.yandex.practicum.filmorate.service;
 
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dal.FilmRepository;
+import ru.yandex.practicum.filmorate.dal.LikesRepository;
 import ru.yandex.practicum.filmorate.dal.UserRepository;
+import ru.yandex.practicum.filmorate.dto.UserFilmDto;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class UserService {
     private final UserRepository userRepository;
+    private final FilmRepository filmRepository;
+    private final LikesRepository likesRepository;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, FilmRepository filmRepository, LikesRepository likesRepository) {
         this.userRepository = userRepository;
+        this.filmRepository = filmRepository;
+        this.likesRepository = likesRepository;
     }
 
     public void addFriend(long userId, long friendId) {
@@ -54,5 +60,42 @@ public class UserService {
 
     public void deleteUser(long userId) {
         userRepository.deleteUser(userId);
+    }
+
+    public List<Film> getRecommendations(long userId) {
+        List<UserFilmDto> likesList = (List<UserFilmDto>) likesRepository.getAllLikes();
+        HashMap<Long, Set<Long>> userLikesMap = new HashMap<>();
+
+        for (UserFilmDto dto : likesList) {
+            userLikesMap.computeIfAbsent(dto.getUserId(), k -> new HashSet<>()).add(dto.getFilmId());
+        }
+
+        if (!userLikesMap.containsKey(userId)) {
+            return Collections.emptyList();
+        }
+
+        Set<Long> targetUserLikes = userLikesMap.get(userId);
+        userLikesMap.remove(userId);
+        Set<Long> suggestedUserLikes = new HashSet<>();
+        int commonSize = -1;
+
+        for (Set<Long> set : userLikesMap.values()) {
+            Set<Long> cloneTargetLikes = new HashSet<>(targetUserLikes);
+            cloneTargetLikes.retainAll(set);
+            if (!cloneTargetLikes.isEmpty()) {
+                if (targetUserLikes.size() > commonSize) {
+                    suggestedUserLikes = set;
+                    commonSize = targetUserLikes.size();
+                }
+            }
+        }
+
+        suggestedUserLikes.removeAll(targetUserLikes);
+
+        List<Film> films = new ArrayList<>();
+        for (long id : suggestedUserLikes) {
+            films.add(filmRepository.findById(id));
+        }
+        return films;
     }
 }
