@@ -5,10 +5,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dal.mapper.FilmRowMapper;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.Mpa;
-import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.*;
+import ru.yandex.practicum.filmorate.service.FeedService;
 
 import java.sql.Date;
 import java.util.*;
@@ -50,13 +48,16 @@ public class FilmRepository extends BaseRepository<Film> {
     private final GenreRepository genreRepository;
     private final UserRepository userRepository;
     private final MpaRepository mpaRepository;
+    private final FeedService feedService;
 
-    public FilmRepository(JdbcTemplate jdbc, FilmRowMapper mapper, GenreRepository genreRepository,
-                          UserRepository userRepository, MpaRepository mpaRepository) {
+    public FilmRepository(JdbcTemplate jdbc, FilmRowMapper mapper,
+                          GenreRepository genreRepository, UserRepository userRepository,
+                          MpaRepository mpaRepository, FeedService feedService) {
         super(jdbc, mapper);
         this.genreRepository = genreRepository;
         this.userRepository = userRepository;
         this.mpaRepository = mpaRepository;
+        this.feedService = feedService;
     }
 
     public Film findById(long filmId) {
@@ -132,6 +133,15 @@ public class FilmRepository extends BaseRepository<Film> {
     public void addLike(long filmId, long userId) {
         try {
             insertPair(INSERT_LIKE_QUERY, filmId, userId);
+
+            feedService.addEvent(new Feed(
+                    System.currentTimeMillis(),
+                    (int) userId,
+                    Feed.EventType.LIKE.name(),
+                    Feed.OperationType.ADD.name(),
+                    (int) filmId,
+                    0
+            ));
         } catch (RuntimeException e) {
             throw new BadRequestException("Пользователь " + userId + " уже поставил лайк фильму " + filmId);
         }
@@ -150,6 +160,15 @@ public class FilmRepository extends BaseRepository<Film> {
 
     public void deleteLike(long filmId, long userId) {
         delete(DELETE_LIKE_QUERY, filmId, userId);
+
+        feedService.addEvent(new Feed(
+                System.currentTimeMillis(),
+                (int) userId,
+                Feed.EventType.LIKE.name(),
+                Feed.OperationType.REMOVE.name(),
+                (int) filmId,
+                0
+        ));
     }
 
     public void deleteFilm(long filmId) {

@@ -5,7 +5,8 @@ import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dal.mapper.UserRowMapper;
 import ru.yandex.practicum.filmorate.exception.BadRequestException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.*;
+import ru.yandex.practicum.filmorate.service.FeedService;
 
 import java.sql.Date;
 import java.util.List;
@@ -27,15 +28,18 @@ public class UserRepository extends BaseRepository<User> {
             "(SELECT friend_id FROM friends WHERE user_id = ?)";
     private static final String DELETE_USER_QUERY = "DELETE FROM users WHERE user_id = ?";
 
-    public UserRepository(JdbcTemplate jdbc, UserRowMapper mapper) {
+    private final FeedService feedService;
+
+    public UserRepository(JdbcTemplate jdbc, UserRowMapper mapper, FeedService feedService) {
         super(jdbc, mapper);
+        this.feedService = feedService;
     }
 
     public User findById(long userId) {
         Optional<User> userOpt = findOne(FIND_BY_ID_QUERY, userId);
         if (userOpt.isPresent()) {
             User user = userOpt.get();
-            for (User friend: findFriends(userId)) {
+            for (User friend : findFriends(userId)) {
                 user.getFriends().add(friend.getId());
             }
             return user;
@@ -47,7 +51,9 @@ public class UserRepository extends BaseRepository<User> {
     public List<User> findAll() {
         return findMany(FIND_ALL_QUERY).stream()
                 .peek(user -> {
-                    for (User friend: findFriends(user.getId())) user.getFriends().add(friend.getId()); })
+                    for (User friend : findFriends(user.getId()))
+                        user.getFriends().add(friend.getId());
+                })
                 .collect(Collectors.toList());
     }
 
@@ -80,16 +86,35 @@ public class UserRepository extends BaseRepository<User> {
         }
         try {
             insertPair(INSERT_FRIEND_QUERY, userId, friendId);
+
+            feedService.addEvent(new Feed(
+                    System.currentTimeMillis(),
+                    (int) userId,
+                    Feed.EventType.FRIEND.name(),
+                    Feed.OperationType.ADD.name(),
+                    0,
+                    (int) friendId
+            ));
         } catch (RuntimeException e) {
             throw new BadRequestException("Пользователь " + userId + " уже добавил в друзья пользователя " + friendId);
         }
     }
 
     public void deleteFriend(long userId, long friendId) {
+
         if (findOne(FIND_BY_ID_QUERY, userId).isEmpty() || findOne(FIND_BY_ID_QUERY, friendId).isEmpty()) {
             throw new NotFoundException("Пользователь с id = " + userId + " не найден.");
         }
         delete(DELETE_FRIEND_QUERY, userId, friendId);
+
+        feedService.addEvent(new Feed(
+                System.currentTimeMillis(),
+                (int) userId,
+                Feed.EventType.FRIEND.name(),
+                Feed.OperationType.REMOVE.name(),
+                0,
+                (int) friendId
+        ));
     }
 
     public List<User> findFriends(long userId) {
@@ -98,7 +123,9 @@ public class UserRepository extends BaseRepository<User> {
         }
         return findMany(FIND_ALL_FRIENDS_QUERY, userId).stream()
                 .peek(user -> {
-                    for (User friend: findFriends(user.getId())) user.getFriends().add(friend.getId()); })
+                    for (User friend : findFriends(user.getId()))
+                        user.getFriends().add(friend.getId());
+                })
                 .collect(Collectors.toList());
     }
 
