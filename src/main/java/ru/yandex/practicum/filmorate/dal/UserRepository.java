@@ -82,16 +82,17 @@ public class UserRepository extends BaseRepository<User> {
 
     public void addFriend(long userId, long friendId) {
         if (findOne(FIND_BY_ID_QUERY, userId).isEmpty() || findOne(FIND_BY_ID_QUERY, friendId).isEmpty()) {
-            throw new NotFoundException("Пользователь с id = " + userId + " не найден.");
+            throw new NotFoundException("Пользователь с id = " + userId + " или friendId = " + friendId + " не найден.");
         }
+
         try {
             insertPair(INSERT_FRIEND_QUERY, userId, friendId);
 
             feedService.addEvent(new Feed(
                     System.currentTimeMillis(),
                     (int) userId,
-                    Feed.EventType.FRIEND.name(),
-                    Feed.OperationType.ADD.name(),
+                    Feed.EventType.FRIEND,
+                    Feed.OperationType.ADD,
                     0,
                     (int) friendId
             ));
@@ -101,21 +102,22 @@ public class UserRepository extends BaseRepository<User> {
     }
 
     public void deleteFriend(long userId, long friendId) {
-
         if (findOne(FIND_BY_ID_QUERY, userId).isEmpty() || findOne(FIND_BY_ID_QUERY, friendId).isEmpty()) {
-            throw new NotFoundException("Пользователь с id = " + userId + " не найден.");
+            throw new NotFoundException("Пользователь с id = " + userId + " или friendId = " + friendId + " не найден.");
         }
+
         delete(DELETE_FRIEND_QUERY, userId, friendId);
 
         feedService.addEvent(new Feed(
                 System.currentTimeMillis(),
                 (int) userId,
-                Feed.EventType.FRIEND.name(),
-                Feed.OperationType.REMOVE.name(),
+                Feed.EventType.FRIEND,
+                Feed.OperationType.REMOVE,
                 0,
                 (int) friendId
         ));
     }
+
 
     public List<User> findFriends(long userId) {
         if (findOne(FIND_BY_ID_QUERY, userId).isEmpty()) {

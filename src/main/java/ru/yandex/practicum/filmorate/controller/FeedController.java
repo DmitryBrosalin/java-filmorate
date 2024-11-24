@@ -1,5 +1,7 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.Feed;
 import ru.yandex.practicum.filmorate.service.FeedService;
@@ -17,7 +19,23 @@ public class FeedController {
     }
 
     @GetMapping
-    public List<Feed> getUserFeed(@PathVariable int userId) {
-        return feedService.getFeed(userId);
+    public ResponseEntity<List<Feed>> getUserFeed(@PathVariable int userId) {
+        List<Feed> feed = feedService.getFeed(userId);
+
+        if (feed.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(feed);
+    }
+
+    @PostMapping
+    public ResponseEntity<String> addFeedEvent(@RequestBody Feed feed) {
+        try {
+            feedService.addEvent(feed);
+            return ResponseEntity.status(HttpStatus.CREATED).body("Event successfully added.");
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+        }
     }
 }

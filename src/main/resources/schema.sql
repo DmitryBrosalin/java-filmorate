@@ -56,11 +56,14 @@ CREATE TYPE IF NOT EXISTS operation_type AS ENUM (
 );
 
 CREATE TABLE IF NOT EXISTS feed (
-    event_id   BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    timestamp  TIMESTAMP NOT NULL,
-    user_id    BIGINT REFERENCES users (user_id) ON DELETE CASCADE,
-    eventType  event_type NOT NULL,
-    operation  operation_type NOT NULL,
-    entity_id  BIGINT NOT NULL
+    event_id    BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    timestamp   TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    user_id     BIGINT REFERENCES users (user_id) ON DELETE CASCADE,
+    event_type  event_type NOT NULL,
+    operation   operation_type NOT NULL,
+    entity_id   BIGINT NOT NULL
 );
+
+CREATE INDEX idx_feed_user_id ON feed (user_id);
+
 

@@ -13,12 +13,12 @@ public class FeedRepository {
     private final JdbcTemplate jdbcTemplate;
 
     private static final String INSERT_FEED_QUERY = """
-            INSERT INTO feed (timestamp, user_id, eventType, operation, entity_id)
-            VALUES (?, ?, ?::event_type, ?::operation_type, ?)
+            INSERT INTO feed (timestamp, user_id, eventType, operation, event_id, entity_id)
+            VALUES (?, ?, ?::event_type, ?::operation_type, ?, ?)
             """;
 
     private static final String SELECT_FEEDS_BY_USER_ID_QUERY = """
-            SELECT *
+            SELECT event_id, timestamp, user_id, eventType, operation, entity_id
             FROM feed
             WHERE user_id = ?
             ORDER BY timestamp DESC
@@ -33,8 +33,9 @@ public class FeedRepository {
                 INSERT_FEED_QUERY,
                 feed.getTimestamp(),
                 feed.getUserId(),
-                feed.getEventType(),
-                feed.getOperation(),
+                feed.getEventType().name(),
+                feed.getOperation().name(),
+                feed.getEventId(),
                 feed.getEntityId()
         );
     }
@@ -51,8 +52,8 @@ public class FeedRepository {
         return new Feed(
                 rs.getTimestamp("timestamp").getTime(),
                 rs.getInt("user_id"),
-                rs.getString("eventType"),
-                rs.getString("operation"),
+                Feed.EventType.valueOf(rs.getString("eventType")),
+                Feed.OperationType.valueOf(rs.getString("operation")),
                 rs.getInt("event_id"),
                 rs.getInt("entity_id")
         );

@@ -10,8 +10,8 @@ import lombok.NoArgsConstructor;
 public class Feed {
     private Long timestamp;
     private int userId;
-    private String eventType;
-    private String operation;
+    private EventType eventType;
+    private OperationType operation;
     private int eventId;
     private int entityId;
 

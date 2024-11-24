@@ -137,8 +137,8 @@ public class FilmRepository extends BaseRepository<Film> {
             feedService.addEvent(new Feed(
                     System.currentTimeMillis(),
                     (int) userId,
-                    Feed.EventType.LIKE.name(),
-                    Feed.OperationType.ADD.name(),
+                    Feed.EventType.LIKE,
+                    Feed.OperationType.ADD,
                     (int) filmId,
                     0
             ));
@@ -164,8 +164,8 @@ public class FilmRepository extends BaseRepository<Film> {
         feedService.addEvent(new Feed(
                 System.currentTimeMillis(),
                 (int) userId,
-                Feed.EventType.LIKE.name(),
-                Feed.OperationType.REMOVE.name(),
+                Feed.EventType.LIKE,
+                Feed.OperationType.REMOVE,
                 (int) filmId,
                 0
         ));

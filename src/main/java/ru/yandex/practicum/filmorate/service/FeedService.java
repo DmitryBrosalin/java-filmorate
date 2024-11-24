@@ -23,6 +23,7 @@ public class FeedService {
         if (feed.getEventType() == null || feed.getOperation() == null) {
             throw new IllegalArgumentException("EventType and OperationType must be specified.");
         }
+
         feedRepository.addEvent(feed);
     }
 }
