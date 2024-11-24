@@ -15,7 +15,6 @@ public class Feed {
     private int eventId;
     private int entityId;
 
-    //
     public enum EventType {
         LIKE,
         REVIEW,
