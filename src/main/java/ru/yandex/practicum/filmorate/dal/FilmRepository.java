@@ -147,7 +147,7 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     private void deleteFilmGenres(long filmId, Set<Genre> genres) {
-        for (Genre genre: genres) {
+        for (Genre genre : genres) {
             delete(DELETE_FILM_GENRES, filmId, genre.getId());
         }
     }
@@ -155,7 +155,7 @@ public class FilmRepository extends BaseRepository<Film> {
 
     private void insertGenres(long filmId, Set<Genre> genres) {
         if (genres != null) {
-            for (Genre genre: genres) {
+            for (Genre genre : genres) {
                 try {
                     insertPair(INSERT_GENRE_QUERY, filmId, genre.getId());
                 } catch (RuntimeException e) {
@@ -236,7 +236,7 @@ public class FilmRepository extends BaseRepository<Film> {
                 throw new BadRequestException("id MPA-рейтинга должен быть от 1 до 5.");
             }
         }
-        for (Genre genre: film.getGenres()) {
+        for (Genre genre : film.getGenres()) {
             if (genre != null) {
                 try {
                     genreRepository.findById(genre.getId());
@@ -296,8 +296,7 @@ public class FilmRepository extends BaseRepository<Film> {
             return findMany(FIND_FILMS_BY_DIRECTOR_ID, directorsIds.getFirst().getId()).stream()
                     .peek(this::prepareForResponse)
                     .collect(Collectors.toList());
-        }
-        else {
+        } else {
             StringBuilder idsString = new StringBuilder();
             for (int i = 0; i < directorsIds.size(); i++) {
                 if (i == directorsIds.size() - 1) {
