@@ -75,4 +75,8 @@ public class DirectorRepository extends BaseRepository<Director> {
     public Set<Director> findDirectorsByFilmId(Long filmId) {
         return Set.copyOf(findMany(FIND_DIRECTORS_BY_FILM_ID_QUERY, filmId));
     }
+
+    public List<Director> findDirectors(String findQuery) {
+        return findMany(findQuery);
+    }
 }

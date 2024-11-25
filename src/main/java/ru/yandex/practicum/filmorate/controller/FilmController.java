@@ -6,6 +6,8 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/films")
@@ -70,5 +72,11 @@ public class FilmController {
     public Collection<Film> getFilmsByDirector(@PathVariable final long directorId,
                                                @RequestParam String sortBy) {
         return filmService.getFilmsByDirector(directorId, sortBy);
+    }
+
+    @GetMapping(value = "/search")
+    public Collection<Film> findFilm(@RequestParam Optional<String> query,
+                                     @RequestParam Optional<List<String>> by) {
+        return filmService.findFilm(query, by);
     }
 }
