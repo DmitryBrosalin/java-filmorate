@@ -8,8 +8,6 @@ import ru.yandex.practicum.filmorate.service.ReviewService;
 
 import java.util.Collection;
 
-//Спринт 12 Отзывы
-
 @Slf4j
 @RestController
 @RequestMapping("/reviews")
@@ -23,8 +21,8 @@ public class ReviewController {
     }
 
     @PostMapping
-    public Review addwReview(@RequestBody Review review) {
-        return reviewService.addwReview(review);
+    public Review addReview(@RequestBody Review review) {
+        return reviewService.addReview(review);
     }
 
     @PutMapping
@@ -33,37 +31,37 @@ public class ReviewController {
     }
 
     @GetMapping
-    public Collection<Review> getReviews(@RequestParam(value = "filmId", required = false) Integer filmId) {
+    public Collection<Review> getReviews(@RequestParam(value = "filmId", required = false) long filmId) {
         return reviewService.getReviews(filmId);
     }
 
     @DeleteMapping("/{id}")
-    public void removeReview(@PathVariable("id") int id) {
+    public void removeReview(@PathVariable("id") long id) {
         reviewService.deleteReview(id);
     }
 
     @GetMapping("/{id}")
-    public Review getReview(@PathVariable("id") int id) {
+    public Review getReview(@PathVariable("id") long id) {
         return reviewService.getReview(id);
     }
 
     @PutMapping("/{reviewId}/like/{userId}")
-    public Review addLike(@PathVariable("reviewId") int reviewId, @PathVariable("userId") int userId) {
+    public Review addLike(@PathVariable("reviewId") long reviewId, @PathVariable("userId") long userId) {
         return reviewService.addLike(reviewId, userId);
     }
 
     @DeleteMapping("/{reviewId}/like/{userId}")
-    public Review removeLike(@PathVariable("reviewId") int reviewId, @PathVariable("userId") int userId) {
+    public Review removeLike(@PathVariable("reviewId") long reviewId, @PathVariable("userId") long userId) {
         return reviewService.removeLike(reviewId, userId);
     }
 
     @PutMapping("/{reviewId}/dislike/{userId}")
-    public Review addDislike(@PathVariable("reviewId") int reviewId, @PathVariable("userId") int userId) {
+    public Review addDislike(@PathVariable("reviewId") long reviewId, @PathVariable("userId") long userId) {
         return reviewService.addDislike(reviewId, userId);
     }
 
     @DeleteMapping("/{reviewId}/dislike/{userId}")
-    public Review removeDislike(@PathVariable("reviewId") int reviewId, @PathVariable("userId") int userId) {
+    public Review removeDislike(@PathVariable("reviewId") long reviewId, @PathVariable("userId") long userId) {
         return reviewService.removeDislike(reviewId, userId);
     }
 
