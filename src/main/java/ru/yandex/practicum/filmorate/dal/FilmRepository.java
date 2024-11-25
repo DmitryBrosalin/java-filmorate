@@ -187,4 +187,24 @@ public class FilmRepository extends BaseRepository<Film> {
                 .peek(this::prepareForResponse)
                 .collect(Collectors.toList());
     }
+
+    public Collection<Film> getAllFilmsByIds(Set<Long> filmIds) {
+        StringBuilder queryStart = new StringBuilder("SELECT * FROM films WHERE film_id IN (");
+        List<Long> filmsFromSet = new ArrayList<>(filmIds);
+
+        if (filmsFromSet.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        for (int i = 0; i < filmsFromSet.size(); i++) {
+            if (i < filmsFromSet.size() - 1) {
+                queryStart.append(filmsFromSet.get(i)).append(",");
+            } else {
+                queryStart.append(filmsFromSet.get(i)).append(")");
+            }
+        }
+        return findMany(queryStart.toString()).stream()
+                .peek(this::prepareForResponse)
+                .collect(Collectors.toList());
+    }
 }
