@@ -5,7 +5,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dal.mapper.FilmRowMapper;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.model.*;
+import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.Date;
 import java.util.*;
@@ -44,12 +47,6 @@ public class FilmRepository extends BaseRepository<Film> {
             "WHERE f.film_id IN (SELECT film_id FROM likes AS l WHERE l.user_id = ?)\n" +
             "AND f.film_id IN (SELECT film_id FROM likes AS l WHERE l.user_id = ?)\n" +
             "AND f.film_id IN (SELECT DISTINCT film_id FROM likes GROUP BY (film_id) ORDER BY COUNT (film_id) DESC);";
-    private static final String INSERT_FILM_DIRECTORS =
-            "INSERT INTO film_directors (film_id, director_id) VALUES (?, ?);";
-    private static final String DELETE_FILM_DIRECTORS =
-            "DELETE FROM film_directors WHERE (film_id = ? AND director_id = ?);";
-    private static final String DELETE_FILM_GENRES =
-            "DELETE FROM film_genres WHERE (film_id = ? AND genre_id = ?);";
     private static final String FIND_FILMS_BY_DIRECTOR_ORDER_BY_LIKES =
             "SELECT DISTINCT * FROM films WHERE film_id IN (SELECT F.FILM_ID \n" +
                     "FROM films AS f\n" +
@@ -65,21 +62,16 @@ public class FilmRepository extends BaseRepository<Film> {
                     "FROM FILM_DIRECTORS fd\n" +
                     "WHERE fd.DIRECTOR_ID = ?)\n" +
                     "ORDER BY f.RELEASE_DATE;";
-    private static final String GET_FILM_DIRECTORS =
-            "SELECT * FROM film_directors";
-
     private final GenreRepository genreRepository;
     private final UserRepository userRepository;
     private final MpaRepository mpaRepository;
-    private final DirectorRepository directorRepository;
 
     public FilmRepository(JdbcTemplate jdbc, FilmRowMapper mapper, GenreRepository genreRepository,
-                          UserRepository userRepository, MpaRepository mpaRepository, DirectorRepository directorRepository) {
+                          UserRepository userRepository, MpaRepository mpaRepository) {
         super(jdbc, mapper);
         this.genreRepository = genreRepository;
         this.userRepository = userRepository;
         this.mpaRepository = mpaRepository;
-        this.directorRepository = directorRepository;
     }
 
     public Film findById(long filmId) {
@@ -109,7 +101,6 @@ public class FilmRepository extends BaseRepository<Film> {
                 film.getMpa().getId());
         film.setId(id);
         insertGenres(id, film.getGenres());
-        insertDirectors(id, film.getDirectors());
         return prepareForResponse(film);
     }
 
@@ -118,14 +109,6 @@ public class FilmRepository extends BaseRepository<Film> {
             throw new NotFoundException("Фильм с id = " + film.getId() + " не найден.");
         }
         checkFilmMpaAndGenres(film);
-        if (!film.getDirectors().equals(findById(film.getId()).getDirectors())) {
-            deleteFilmDirectors(film.getId(), findById(film.getId()).getDirectors());
-            insertDirectors(film.getId(), film.getDirectors());
-        }
-        if (!film.getGenres().equals(findById(film.getId()).getGenres())) {
-            deleteFilmGenres(film.getId(), findById(film.getId()).getGenres());
-            insertGenres(film.getId(), film.getGenres());
-        }
         film.setLikes(findLikes(film.getId()));
         update(UPDATE_QUERY,
                 film.getName(),
@@ -134,40 +117,16 @@ public class FilmRepository extends BaseRepository<Film> {
                 film.getDuration(),
                 film.getMpa().getId(),
                 film.getId());
-        return prepareForResponse(film);
-    }
-
-    private void deleteFilmDirectors(long filmId, Set<Director> directors) {
-        for (Director director : directors) {
-            delete(DELETE_FILM_DIRECTORS, filmId, director.getId());
-        }
-    }
-
-    private void deleteFilmGenres(long filmId, Set<Genre> genres) {
-        for (Genre genre : genres) {
-            delete(DELETE_FILM_GENRES, filmId, genre.getId());
-        }
+        return film;
     }
 
     private void insertGenres(long filmId, Set<Genre> genres) {
         if (genres != null) {
-            for (Genre genre : genres) {
+            for (Genre genre: genres) {
                 try {
                     insertPair(INSERT_GENRE_QUERY, filmId, genre.getId());
                 } catch (RuntimeException e) {
                     throw new BadRequestException("У фильма " + filmId + " уже есть жанр " + genre.getId());
-                }
-            }
-        }
-    }
-
-    private void insertDirectors(long filmId, Set<Director> directors) {
-        if (directors != null) {
-            for (Director director : directors) {
-                try {
-                    insertPair(INSERT_FILM_DIRECTORS, filmId, director.getId());
-                } catch (RuntimeException e) {
-                    throw new BadRequestException("У фильма " + filmId + " уже есть режиссер" + director.getId());
                 }
             }
         }
@@ -183,10 +142,6 @@ public class FilmRepository extends BaseRepository<Film> {
 
     private Mpa findMpa(int mpaId) {
         return mpaRepository.getMpaById(mpaId);
-    }
-
-    private Set<Director> findDirectors(long filmId) {
-        return directorRepository.findDirectorsByFilmId(filmId);
     }
 
     public void addLike(long filmId, long userId) {
@@ -220,7 +175,6 @@ public class FilmRepository extends BaseRepository<Film> {
         film.setGenres(new TreeSet<>(findGenres(film.getId())));
         film.setLikes(findLikes(film.getId()));
         film.setMpa(findMpa(film.getMpa().getId()));
-        film.setDirectors(new LinkedHashSet<>(findDirectors(film.getId())));
         return film;
     }
 
@@ -232,7 +186,7 @@ public class FilmRepository extends BaseRepository<Film> {
                 throw new BadRequestException("id MPA-рейтинга должен быть от 1 до 5.");
             }
         }
-        for (Genre genre : film.getGenres()) {
+        for (Genre genre: film.getGenres()) {
             if (genre != null) {
                 try {
                     genreRepository.findById(genre.getId());
@@ -245,6 +199,26 @@ public class FilmRepository extends BaseRepository<Film> {
 
     public Collection<Film> getCommonFilms(long userId, long friendId) {
         return findMany(FIND_COMMON_FILMS, userId, friendId).stream()
+                .peek(this::prepareForResponse)
+                .collect(Collectors.toList());
+    }
+
+    public Collection<Film> getAllFilmsByIds(Set<Long> filmIds) {
+        StringBuilder queryStart = new StringBuilder("SELECT * FROM films WHERE film_id IN (");
+        List<Long> filmsFromSet = new ArrayList<>(filmIds);
+
+        if (filmsFromSet.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        for (int i = 0; i < filmsFromSet.size(); i++) {
+            if (i < filmsFromSet.size() - 1) {
+                queryStart.append(filmsFromSet.get(i)).append(",");
+            } else {
+                queryStart.append(filmsFromSet.get(i)).append(")");
+            }
+        }
+        return findMany(queryStart.toString()).stream()
                 .peek(this::prepareForResponse)
                 .collect(Collectors.toList());
     }
