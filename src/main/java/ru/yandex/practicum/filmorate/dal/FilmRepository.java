@@ -65,6 +65,12 @@ public class FilmRepository extends BaseRepository<Film> {
                     "FROM FILM_DIRECTORS fd\n" +
                     "WHERE fd.DIRECTOR_ID = ?)\n" +
                     "ORDER BY f.RELEASE_DATE;";
+    private static final String FIND_FILMS_BY_DIRECTOR_ID =
+            "SELECT *\n" +
+                    "FROM films AS f\n" +
+                    "WHERE film_id IN (SELECT film_id\n" +
+                    "FROM FILM_DIRECTORS fd\n" +
+                    "WHERE fd.DIRECTOR_ID = ?)";
     private final GenreRepository genreRepository;
     private final UserRepository userRepository;
     private final MpaRepository mpaRepository;
@@ -274,6 +280,38 @@ public class FilmRepository extends BaseRepository<Film> {
                     .collect(Collectors.toList());
         } else {
             return findMany(FIND_FILMS_BY_DIRECTOR_ORDER_BY_LIKES, directorId).stream()
+                    .peek(this::prepareForResponse)
+                    .collect(Collectors.toList());
+        }
+    }
+
+    public List<Film> findFilms(String findQuery) {
+        return findMany(findQuery).stream()
+                .peek(this::prepareForResponse)
+                .collect(Collectors.toList());
+    }
+
+    public Collection<Film> getAllFilmsByDirectors(List<Director> directorsIds) {
+        if (directorsIds.size() == 1) {
+            return findMany(FIND_FILMS_BY_DIRECTOR_ID, directorsIds.getFirst().getId()).stream()
+                    .peek(this::prepareForResponse)
+                    .collect(Collectors.toList());
+        }
+        else {
+            StringBuilder idsString = new StringBuilder();
+            for (int i = 0; i < directorsIds.size(); i++) {
+                if (i == directorsIds.size() - 1) {
+                    idsString.append(directorsIds.get(i).getId());
+                } else {
+                    idsString.append(directorsIds.get(i).getId()).append(",");
+                }
+            }
+
+            String FIND_FILMS_BY_DIRECTOR_IDS = "SELECT * FROM films AS f " +
+                    "WHERE film_id IN (SELECT film_id FROM FILM_DIRECTORS fd " +
+                    "WHERE fd.DIRECTOR_ID IN (" + idsString + "))";
+
+            return findMany(FIND_FILMS_BY_DIRECTOR_IDS).stream()
                     .peek(this::prepareForResponse)
                     .collect(Collectors.toList());
         }
