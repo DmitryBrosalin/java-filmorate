@@ -7,6 +7,7 @@ import ru.yandex.practicum.filmorate.validation.ReleaseDateConstraint;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -24,6 +25,7 @@ public class Film implements Comparable<Film>, Serializable {
     private Mpa mpa;
     private Set<Genre> genres = new TreeSet<>();
     private Set<Long> likes = new TreeSet<>();
+    private Set<Director> directors = new LinkedHashSet<>();
 
     @Override
     public int compareTo(Film film) {
