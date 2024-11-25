@@ -306,11 +306,11 @@ public class FilmRepository extends BaseRepository<Film> {
                 }
             }
 
-            String FIND_FILMS_BY_DIRECTOR_IDS = "SELECT * FROM films AS f " +
+            String query = "SELECT * FROM films AS f " +
                     "WHERE film_id IN (SELECT film_id FROM FILM_DIRECTORS fd " +
                     "WHERE fd.DIRECTOR_ID IN (" + idsString + "))";
 
-            return findMany(FIND_FILMS_BY_DIRECTOR_IDS).stream()
+            return findMany(query).stream()
                     .peek(this::prepareForResponse)
                     .collect(Collectors.toList());
         }
