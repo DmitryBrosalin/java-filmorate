@@ -5,10 +5,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dal.mapper.FilmRowMapper;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.Mpa;
-import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.*;
 
 import java.sql.Date;
 import java.util.*;
@@ -47,16 +44,39 @@ public class FilmRepository extends BaseRepository<Film> {
             "WHERE f.film_id IN (SELECT film_id FROM likes AS l WHERE l.user_id = ?)\n" +
             "AND f.film_id IN (SELECT film_id FROM likes AS l WHERE l.user_id = ?)\n" +
             "AND f.film_id IN (SELECT DISTINCT film_id FROM likes GROUP BY (film_id) ORDER BY COUNT (film_id) DESC);";
+    private static final String INSERT_FILM_DIRECTORS =
+            "INSERT INTO film_directors (film_id, director_id) VALUES (?, ?);";
+    private static final String DELETE_FILM_DIRECTORS =
+            "DELETE FROM film_directors WHERE (film_id = ? AND director_id = ?);";
+    private static final String DELETE_FILM_GENRES =
+            "DELETE FROM film_genres WHERE (film_id = ? AND genre_id = ?);";
+    private static final String FIND_FILMS_BY_DIRECTOR_ORDER_BY_LIKES =
+            "SELECT DISTINCT * FROM films WHERE film_id IN (SELECT F.FILM_ID \n" +
+                    "FROM films AS f\n" +
+                    "LEFT JOIN likes AS l ON f.film_id = l.film_id\n" +
+                    "WHERE f.film_id IN (SELECT fd.film_id\n" +
+                    "FROM FILM_DIRECTORS fd\n" +
+                    "WHERE fd.DIRECTOR_ID = ?)\n" +
+                    "ORDER BY l.user_id DESC);";
+    private static final String FIND_FILMS_BY_DIRECTOR_ORDER_BY_RELEASE_DATE =
+            "SELECT *\n" +
+                    "FROM films AS f\n" +
+                    "WHERE film_id IN (SELECT film_id\n" +
+                    "FROM FILM_DIRECTORS fd\n" +
+                    "WHERE fd.DIRECTOR_ID = ?)\n" +
+                    "ORDER BY f.RELEASE_DATE;";
     private final GenreRepository genreRepository;
     private final UserRepository userRepository;
     private final MpaRepository mpaRepository;
+    private final DirectorRepository directorRepository;
 
     public FilmRepository(JdbcTemplate jdbc, FilmRowMapper mapper, GenreRepository genreRepository,
-                          UserRepository userRepository, MpaRepository mpaRepository) {
+                          UserRepository userRepository, MpaRepository mpaRepository, DirectorRepository directorRepository) {
         super(jdbc, mapper);
         this.genreRepository = genreRepository;
         this.userRepository = userRepository;
         this.mpaRepository = mpaRepository;
+        this.directorRepository = directorRepository;
     }
 
     public Film findById(long filmId) {
@@ -86,6 +106,7 @@ public class FilmRepository extends BaseRepository<Film> {
                 film.getMpa().getId());
         film.setId(id);
         insertGenres(id, film.getGenres());
+        insertDirectors(id, film.getDirectors());
         return prepareForResponse(film);
     }
 
@@ -94,6 +115,14 @@ public class FilmRepository extends BaseRepository<Film> {
             throw new NotFoundException("Фильм с id = " + film.getId() + " не найден.");
         }
         checkFilmMpaAndGenres(film);
+        if (!film.getDirectors().equals(findById(film.getId()).getDirectors())) {
+            deleteFilmDirectors(film.getId(), findById(film.getId()).getDirectors());
+            insertDirectors(film.getId(), film.getDirectors());
+        }
+        if (!film.getGenres().equals(findById(film.getId()).getGenres())) {
+            deleteFilmGenres(film.getId(), findById(film.getId()).getGenres());
+            insertGenres(film.getId(), film.getGenres());
+        }
         film.setLikes(findLikes(film.getId()));
         update(UPDATE_QUERY,
                 film.getName(),
@@ -102,8 +131,21 @@ public class FilmRepository extends BaseRepository<Film> {
                 film.getDuration(),
                 film.getMpa().getId(),
                 film.getId());
-        return film;
+        return prepareForResponse(film);
     }
+
+    private void deleteFilmDirectors(long filmId, Set<Director> directors) {
+        for (Director director : directors) {
+            delete(DELETE_FILM_DIRECTORS, filmId, director.getId());
+        }
+    }
+
+    private void deleteFilmGenres(long filmId, Set<Genre> genres) {
+        for (Genre genre: genres) {
+            delete(DELETE_FILM_GENRES, filmId, genre.getId());
+        }
+    }
+
 
     private void insertGenres(long filmId, Set<Genre> genres) {
         if (genres != null) {
@@ -115,6 +157,22 @@ public class FilmRepository extends BaseRepository<Film> {
                 }
             }
         }
+    }
+
+    private void insertDirectors(long filmId, Set<Director> directors) {
+        if (directors != null) {
+            for (Director director : directors) {
+                try {
+                    insertPair(INSERT_FILM_DIRECTORS, filmId, director.getId());
+                } catch (RuntimeException e) {
+                    throw new BadRequestException("У фильма " + filmId + " уже есть режиссер" + director.getId());
+                }
+            }
+        }
+    }
+
+    private Set<Director> findDirectors(long filmId) {
+        return directorRepository.findDirectorsByFilmId(filmId);
     }
 
     private Set<Genre> findGenres(long filmId) {
@@ -160,6 +218,7 @@ public class FilmRepository extends BaseRepository<Film> {
         film.setGenres(new TreeSet<>(findGenres(film.getId())));
         film.setLikes(findLikes(film.getId()));
         film.setMpa(findMpa(film.getMpa().getId()));
+        film.setDirectors(new LinkedHashSet<>(findDirectors(film.getId())));
         return film;
     }
 
@@ -206,5 +265,17 @@ public class FilmRepository extends BaseRepository<Film> {
         return findMany(queryStart.toString()).stream()
                 .peek(this::prepareForResponse)
                 .collect(Collectors.toList());
+    }
+
+    public Collection<Film> getFilmsByDirector(long directorId, String sortBy) {
+        if (sortBy.equals("year")) {
+            return findMany(FIND_FILMS_BY_DIRECTOR_ORDER_BY_RELEASE_DATE, directorId).stream()
+                    .peek(this::prepareForResponse)
+                    .collect(Collectors.toList());
+        } else {
+            return findMany(FIND_FILMS_BY_DIRECTOR_ORDER_BY_LIKES, directorId).stream()
+                    .peek(this::prepareForResponse)
+                    .collect(Collectors.toList());
+        }
     }
 }
