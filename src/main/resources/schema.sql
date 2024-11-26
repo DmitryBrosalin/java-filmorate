@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS review_likes (
 );
 
 CREATE TABLE IF NOT EXISTS user_feed (
-    event_id LONGL PRIMARY KEY,
+    event_id LONG PRIMARY KEY,
     timestamp BIGINT NOT NULL,
     user_id LONG NOT NULL,
     event_type VARCHAR(20) NOT NULL,
