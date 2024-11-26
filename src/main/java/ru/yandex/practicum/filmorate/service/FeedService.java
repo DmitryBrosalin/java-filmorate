@@ -14,10 +14,6 @@ public class FeedService {
 
     private final FeedRepository feedRepository;
 
-    public long addEvent(int userId, Feed.EventType eventType, Feed.Operation operation, long entityId) {
-        return feedRepository.addEvent(userId, eventType, operation, entityId);
-    }
-
     public Collection<Feed> getUserFeed(int userId, int limit, int offset) {
         return feedRepository.getUserFeed(userId, limit, offset);
     }

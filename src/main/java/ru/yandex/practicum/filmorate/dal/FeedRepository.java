@@ -28,10 +28,10 @@ public class FeedRepository extends BaseRepository<Feed> {
         super(jdbcTemplate, feedRowMapper);
     }
 
-    public long addEvent(long userId, Feed.EventType eventType, Feed.Operation operation, long entityId) {
+    public void addEvent(long userId, Feed.EventType eventType, Feed.Operation operation, long entityId) {
         long timestamp = Instant.now().toEpochMilli();
         Object[] params = new Object[] { timestamp, userId, eventType.name(), operation.name(), entityId };
-        return insert(INSERT_EVENT_SQL, params);
+        insert(INSERT_EVENT_SQL, params);
     }
 
     public Collection<Feed> getUserFeed(long userId, int limit, int offset) {
