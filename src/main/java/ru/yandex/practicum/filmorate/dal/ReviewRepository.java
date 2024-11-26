@@ -84,7 +84,8 @@ public class ReviewRepository extends BaseRepository<Review> {
 
     public void removeReview(long id) {
         Optional<Review> existingReview = findOne(FIND_BY_ID_QUERY, id);
-        if (existingReview.isEmpty()) {throw new NotFoundException("Отзыв с id = " + id + " не найден.");
+        if (existingReview.isEmpty()) {
+            throw new NotFoundException("Отзыв с id = " + id + " не найден.");
         }
         delete(DELETE_REVIEW_QUERY, id);
         feedRepository.removeReviewEvent(existingReview.get().getUserId(), existingReview.get().getFilmId());
