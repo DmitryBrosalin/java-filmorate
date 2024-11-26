@@ -13,7 +13,7 @@ public class FeedRowMapper implements RowMapper<Feed> {
     @Override
     public Feed mapRow(ResultSet rs, int rowNum) throws SQLException {
         Long timestamp = rs.getLong("timestamp");
-        int userId = rs.getInt("user_id");
+        long userId = rs.getLong("user_id");
 
         String eventTypeStr = rs.getString("event_type");
         Feed.EventType eventType;
@@ -31,8 +31,8 @@ public class FeedRowMapper implements RowMapper<Feed> {
             throw new SQLException("Неверный тип операции: " + operationStr);
         }
 
-        int eventId = rs.getInt("event_id");
-        int entityId = rs.getInt("entity_id");
+        long eventId = rs.getLong("event_id");
+        long entityId = rs.getLong("entity_id");
 
         return new Feed(timestamp, userId, eventType, operation, eventId, entityId);
     }

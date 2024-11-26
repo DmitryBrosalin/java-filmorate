@@ -52,7 +52,7 @@ public class ReviewRepository extends BaseRepository<Review> {
                     review.getUseful());
             review.setReviewId(id);
 
-            feedRepository.addReviewEvent(review.getUserId(), review.getFilmId());
+            feedRepository.addReviewEvent(review.getUserId(), id);
         }
         return review;
     }
@@ -77,7 +77,7 @@ public class ReviewRepository extends BaseRepository<Review> {
                     review.getUseful(),
                     review.getReviewId());
 
-            feedRepository.updateReviewEvent(review.getUserId(), review.getFilmId());
+            feedRepository.updateReviewEvent(review.getUserId(), review.getReviewId());
         }
         return review;
     }
@@ -88,7 +88,8 @@ public class ReviewRepository extends BaseRepository<Review> {
             throw new NotFoundException("Отзыв с id = " + id + " не найден.");
         }
         delete(DELETE_REVIEW_QUERY, id);
-        feedRepository.removeReviewEvent(existingReview.get().getUserId(), existingReview.get().getFilmId());
+
+        feedRepository.removeReviewEvent(existingReview.get().getUserId(), id);
     }
 
     public Collection<Review> getReviews(long filmId) {

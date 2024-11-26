@@ -76,12 +76,12 @@ CREATE TABLE IF NOT EXISTS review_likes (
 );
 
 CREATE TABLE IF NOT EXISTS user_feed (
-    event_id BIGSERIAL PRIMARY KEY,
+    event_id LONGL PRIMARY KEY,
     timestamp BIGINT NOT NULL,
-    user_id BIGINT NOT NULL,
+    user_id LONG NOT NULL,
     event_type VARCHAR(20) NOT NULL,
     operation VARCHAR(20) NOT NULL,
-    entity_id BIGINT NOT NULL,
+    entity_id LONG NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
