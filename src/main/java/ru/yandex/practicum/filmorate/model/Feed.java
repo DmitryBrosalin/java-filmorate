@@ -5,11 +5,11 @@ import lombok.*;
 @Data
 public class Feed {
     private final Long timestamp;
-    private final int userId; //long
+    private final long userId;
     private final EventType eventType;
     private final Operation operation;
-    private final int eventId;
-    private final int entityId;
+    private final long eventId;
+    private final long entityId;
 
     public enum EventType {
         LIKE,
