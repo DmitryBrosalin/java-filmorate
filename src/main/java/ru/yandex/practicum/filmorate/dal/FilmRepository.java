@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.dal;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import ru.yandex.practicum.filmorate.exception.BadRequestException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -75,14 +76,16 @@ public class FilmRepository extends BaseRepository<Film> {
     private final UserRepository userRepository;
     private final MpaRepository mpaRepository;
     private final DirectorRepository directorRepository;
+    private final FeedRepository feedRepository;
 
     public FilmRepository(JdbcTemplate jdbc, FilmRowMapper mapper, GenreRepository genreRepository,
-                          UserRepository userRepository, MpaRepository mpaRepository, DirectorRepository directorRepository) {
+                          UserRepository userRepository, MpaRepository mpaRepository, DirectorRepository directorRepository, FeedRepository feedRepository) {
         super(jdbc, mapper);
         this.genreRepository = genreRepository;
         this.userRepository = userRepository;
         this.mpaRepository = mpaRepository;
         this.directorRepository = directorRepository;
+        this.feedRepository = feedRepository;
     }
 
     public Film findById(long filmId) {
@@ -196,7 +199,8 @@ public class FilmRepository extends BaseRepository<Film> {
     public void addLike(long filmId, long userId) {
         try {
             insertPair(INSERT_LIKE_QUERY, filmId, userId);
-        } catch (RuntimeException e) {
+            feedRepository.addLikeEvent(userId, filmId);
+        } catch (DataIntegrityViolationException e) {
             throw new BadRequestException("Пользователь " + userId + " уже поставил лайк фильму " + filmId);
         }
     }
@@ -214,6 +218,7 @@ public class FilmRepository extends BaseRepository<Film> {
 
     public void deleteLike(long filmId, long userId) {
         delete(DELETE_LIKE_QUERY, filmId, userId);
+        feedRepository.removeLikeEvent(userId, filmId);
     }
 
     public void deleteFilm(long filmId) {

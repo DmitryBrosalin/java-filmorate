@@ -1,9 +1,14 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.model.Feed;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.FeedService;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.Collection;
@@ -12,12 +17,10 @@ import java.util.Set;
 
 @RestController
 @RequestMapping("/users")
+@RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
-
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
+    private final FeedService feedService;
 
     @GetMapping
     public Collection<User> getUsers() {
@@ -70,5 +73,14 @@ public class UserController {
     @GetMapping(value = "/{id}/recommendations")
     public List<Film> getRecommendations(@PathVariable long id) {
         return userService.getRecommendations(id);
+    }
+
+    @GetMapping(value = "/{id}/feed")
+    public ResponseEntity<Collection<Feed>> getUserFeed(
+            @PathVariable("id") int userId,
+            @RequestParam(value = "limit", defaultValue = "20") int limit,
+            @RequestParam(value = "offset", defaultValue = "0") int offset) {
+        Collection<Feed> feed = feedService.getUserFeed(userId, limit, offset);
+        return new ResponseEntity<>(feed, HttpStatus.OK);
     }
 }

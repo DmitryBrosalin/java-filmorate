@@ -1,9 +1,11 @@
 package ru.yandex.practicum.filmorate.dal;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dal.mapper.UserRowMapper;
 import ru.yandex.practicum.filmorate.exception.BadRequestException;
+import ru.yandex.practicum.filmorate.exception.InternalServerException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 
@@ -27,8 +29,11 @@ public class UserRepository extends BaseRepository<User> {
             "(SELECT friend_id FROM friends WHERE user_id = ?)";
     private static final String DELETE_USER_QUERY = "DELETE FROM users WHERE user_id = ?";
 
-    public UserRepository(JdbcTemplate jdbc, UserRowMapper mapper) {
+    private final FeedRepository feedRepository;
+
+    public UserRepository(JdbcTemplate jdbc, UserRowMapper mapper, FeedRepository feedRepository) {
         super(jdbc, mapper);
+        this.feedRepository = feedRepository;
     }
 
     public User findById(long userId) {
@@ -78,10 +83,15 @@ public class UserRepository extends BaseRepository<User> {
         if (findOne(FIND_BY_ID_QUERY, userId).isEmpty() || findOne(FIND_BY_ID_QUERY, friendId).isEmpty()) {
             throw new NotFoundException("Пользователь с id = " + userId + " не найден.");
         }
+
         try {
             insertPair(INSERT_FRIEND_QUERY, userId, friendId);
-        } catch (RuntimeException e) {
+            feedRepository.addFriendEvent(userId, friendId);
+            feedRepository.addFriendEvent(friendId, userId);
+        } catch (DataIntegrityViolationException e) {
             throw new BadRequestException("Пользователь " + userId + " уже добавил в друзья пользователя " + friendId);
+        } catch (RuntimeException e) {
+            throw new InternalServerException("Ошибка при добавлении друга пользователя " + friendId + " пользователем " + userId);
         }
     }
 
@@ -90,6 +100,8 @@ public class UserRepository extends BaseRepository<User> {
             throw new NotFoundException("Пользователь с id = " + userId + " не найден.");
         }
         delete(DELETE_FRIEND_QUERY, userId, friendId);
+        feedRepository.removeFriendEvent(userId, friendId);
+        feedRepository.removeFriendEvent(friendId, userId);
     }
 
     public List<User> findFriends(long userId) {
