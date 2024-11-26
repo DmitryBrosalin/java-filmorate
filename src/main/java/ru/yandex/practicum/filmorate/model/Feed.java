@@ -5,7 +5,7 @@ import lombok.*;
 @Data
 public class Feed {
     private final Long timestamp;
-    private final int userId;
+    private final int userId; //long
     private final EventType eventType;
     private final Operation operation;
     private final int eventId;
