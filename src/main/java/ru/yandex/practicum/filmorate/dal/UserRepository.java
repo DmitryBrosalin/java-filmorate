@@ -5,7 +5,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dal.mapper.UserRowMapper;
 import ru.yandex.practicum.filmorate.exception.BadRequestException;
-import ru.yandex.practicum.filmorate.exception.InternalServerException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 
@@ -81,26 +80,40 @@ public class UserRepository extends BaseRepository<User> {
 
     public void addFriend(long userId, long friendId) {
         if (findOne(FIND_BY_ID_QUERY, userId).isEmpty() || findOne(FIND_BY_ID_QUERY, friendId).isEmpty()) {
-            throw new NotFoundException("Пользователь с id = " + userId + " не найден.");
+            throw new NotFoundException("Пользователь с id = " + userId + " или " + friendId + " не найден.");
+        }
+
+        String checkFriendshipQuery = "SELECT * FROM friends WHERE user_id = ? AND friend_id = ?";
+        Optional<User> friendshipCheck = findOne(checkFriendshipQuery, userId, friendId);
+        if (friendshipCheck.isPresent()) {
+            feedRepository.addFriendEvent(userId, friendId);
+            throw new BadRequestException("Пользователь " + userId + " уже добавил в друзья пользователя " + friendId);
         }
 
         try {
             insertPair(INSERT_FRIEND_QUERY, userId, friendId);
             feedRepository.addFriendEvent(userId, friendId);
+            insertPair(INSERT_FRIEND_QUERY, friendId, userId);
             feedRepository.addFriendEvent(friendId, userId);
         } catch (DataIntegrityViolationException e) {
-            throw new BadRequestException("Пользователь " + userId + " уже добавил в друзья пользователя " + friendId);
-        } catch (RuntimeException e) {
-            throw new InternalServerException("Ошибка при добавлении друга пользователя " + friendId + " пользователем " + userId);
+            throw new BadRequestException("Ошибка при добавлении друга: конфликт данных.");
         }
     }
 
     public void deleteFriend(long userId, long friendId) {
         if (findOne(FIND_BY_ID_QUERY, userId).isEmpty() || findOne(FIND_BY_ID_QUERY, friendId).isEmpty()) {
-            throw new NotFoundException("Пользователь с id = " + userId + " не найден.");
+            throw new NotFoundException("Пользователь с id = " + userId + " или " + friendId + " не найден.");
         }
+
+        String checkFriendshipQuery = "SELECT * FROM friends WHERE user_id = ? AND friend_id = ?";
+        Optional<User> friendshipCheck = findOne(checkFriendshipQuery, userId, friendId);
+        if (friendshipCheck.isEmpty()) {
+            throw new NotFoundException("Дружба между пользователями с id = " + userId + " и " + friendId + " не существует.");
+        }
+
         delete(DELETE_FRIEND_QUERY, userId, friendId);
         feedRepository.removeFriendEvent(userId, friendId);
+        delete(DELETE_FRIEND_QUERY, friendId, userId);
         feedRepository.removeFriendEvent(friendId, userId);
     }
 
