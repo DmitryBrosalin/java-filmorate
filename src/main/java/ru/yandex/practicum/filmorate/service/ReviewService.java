@@ -31,8 +31,8 @@ public class ReviewService {
         reviewRepository.removeReview(id);
     }
 
-    public Collection<Review> getReviews(long filmId) {
-        return reviewRepository.getReviews(filmId);
+    public Collection<Review> getReviews(Long filmId, Long count) {
+        return reviewRepository.getReviews(filmId, count);
     }
 
     public Review getReview(long id) {

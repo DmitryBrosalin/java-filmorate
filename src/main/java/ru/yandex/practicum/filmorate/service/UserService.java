@@ -51,6 +51,9 @@ public class UserService {
     }
 
     public User createUser(User user) {
+        if (user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
         return userRepository.save(user);
     }
 

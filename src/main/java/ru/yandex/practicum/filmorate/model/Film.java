@@ -22,6 +22,7 @@ public class Film implements Comparable<Film>, Serializable {
     private LocalDate releaseDate;
     @Positive
     private int duration;
+    @NotNull
     private Mpa mpa;
     private Set<Genre> genres = new TreeSet<>();
     private Set<Long> likes = new TreeSet<>();

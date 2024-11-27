@@ -67,8 +67,10 @@ public class FilmService {
     }
 
     public Collection<Film> getFilmsByDirector(long directorId, String sortBy) {
-        if (!"year".equals(sortBy) && !"likes".equals(sortBy)) {
-            throw new NotFoundException("Ошибка запроса");
+        if (directorRepository.findById(directorId) != null) {
+            if (!"year".equals(sortBy) && !"likes".equals(sortBy)) {
+                throw new BadRequestException("Ошибка запроса");
+            }
         }
         return filmRepository.getFilmsByDirector(directorId, sortBy);
     }
@@ -87,8 +89,8 @@ public class FilmService {
             } else if (sortByList.size() == 2) {
                 List<Film> filmsQuery = filmRepository.findFilms(queryBuilder(sortByList.getFirst(), query.get()));
                 List<Film> dirQuery = getFilmsFromDirectors(sortByList.getLast(), query.get());
-                filmsQuery.addAll(dirQuery);
-                return filmsQuery;
+                dirQuery.addAll(filmsQuery);
+                return dirQuery;
             } else return Collections.emptyList();
         } else {
             throw new BadRequestException("Ошибка в запросе");

@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -21,18 +22,19 @@ public class ReviewController {
     }
 
     @PostMapping
-    public Review addReview(@RequestBody Review review) {
+    public Review addReview(@Valid @RequestBody Review review) {
         return reviewService.addReview(review);
     }
 
     @PutMapping
-    public Review updateReview(@RequestBody Review review) {
+    public Review updateReview(@Valid @RequestBody Review review) {
         return reviewService.updateReview(review);
     }
 
     @GetMapping
-    public Collection<Review> getReviews(@RequestParam(value = "filmId", required = false) long filmId) {
-        return reviewService.getReviews(filmId);
+    public Collection<Review> getReviews(@RequestParam(value = "filmId", required = false) Long filmId,
+                                         @RequestParam(value = "count", required = false) Long count) {
+        return reviewService.getReviews(filmId, count);
     }
 
     @DeleteMapping("/{id}")

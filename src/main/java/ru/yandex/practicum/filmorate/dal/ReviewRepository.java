@@ -17,11 +17,12 @@ public class ReviewRepository extends BaseRepository<Review> {
     private final FeedRepository feedRepository;
     private static final String INSERT_REVIEW = "INSERT INTO review (content, is_positive, user_id, film_id, useful) " +
             "VALUES (?, ?, ?, ?, ?)";
-    private static final String UPDATE_QUERY = "UPDATE review SET content = ?, is_positive = ?, user_id = ?, " +
-            "film_id = ?, useful = ? WHERE review_id = ?";
+    private static final String UPDATE_QUERY = "UPDATE review SET content = ?, is_positive = ? WHERE review_id = ?";
     private static final String FIND_BY_ID_QUERY = "SELECT * FROM review WHERE review_id = ?";
     private static final String DELETE_REVIEW_QUERY = "DELETE FROM review WHERE review_id = ?";
-    private static final String FIND_ALL_QUERY = "SELECT * FROM review WHERE film_id = ?";
+    private static final String FIND_ALL_REVIEWS_FOR_FILM_QUERY = "SELECT * FROM review WHERE film_id = ? ORDER BY useful DESC ";
+    private static final String LIMIT_QUERY = " LIMIT ?";
+    private static final String FIND_ALL_QUERY = "SELECT * FROM review ORDER BY useful DESC ";
     private static final String INSERT_LIKE_QUERY = "INSERT INTO review_likes (review_id, user_id, like_status) VALUES (?, ?, 1)";
     private static final String UPDATE_USEFUL_PLUS_QUERY = "UPDATE review SET useful = useful + 1 WHERE review_id = ?";
     private static final String UPDATE_USEFUL_MINUS_QUERY = "UPDATE review SET useful = useful - 1 WHERE review_id = ?";
@@ -72,12 +73,9 @@ public class ReviewRepository extends BaseRepository<Review> {
             update(UPDATE_QUERY,
                     review.getContent(),
                     review.getIsPositive(),
-                    review.getUserId(),
-                    review.getFilmId(),
-                    review.getUseful(),
                     review.getReviewId());
 
-            feedRepository.updateReviewEvent(review.getUserId(), review.getReviewId());
+            feedRepository.updateReviewEvent(existingReview.get().getUserId(), existingReview.get().getReviewId());
         }
         return review;
     }
@@ -92,8 +90,20 @@ public class ReviewRepository extends BaseRepository<Review> {
         feedRepository.removeReviewEvent(existingReview.get().getUserId(), id);
     }
 
-    public Collection<Review> getReviews(long filmId) {
-        return findMany(FIND_ALL_QUERY, filmId);
+    public Collection<Review> getReviews(Long filmId, Long count) {
+        if (filmId == null) {
+            if (count == null) {
+                return findMany(FIND_ALL_QUERY);
+            } else {
+                return findMany(FIND_ALL_QUERY + LIMIT_QUERY, count);
+            }
+        } else {
+            if (count == null) {
+                return findMany(FIND_ALL_REVIEWS_FOR_FILM_QUERY, filmId);
+            } else {
+                return findMany(FIND_ALL_REVIEWS_FOR_FILM_QUERY + LIMIT_QUERY, filmId, count);
+            }
+        }
     }
 
     public Review getReview(long id) {

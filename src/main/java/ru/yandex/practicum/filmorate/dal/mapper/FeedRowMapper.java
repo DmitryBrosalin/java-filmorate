@@ -34,7 +34,7 @@ public class FeedRowMapper implements RowMapper<Feed> {
         int eventId = rs.getInt("event_id");
         int entityId = rs.getInt("entity_id");
 
-        return new Feed(timestamp, userId, eventType, operation, eventId, entityId);
+        return new Feed(eventId, timestamp, userId, eventType, operation, entityId);
     }
 }
 
