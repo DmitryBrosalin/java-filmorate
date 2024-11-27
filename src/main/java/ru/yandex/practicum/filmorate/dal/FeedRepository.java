@@ -19,7 +19,7 @@ public class FeedRepository extends BaseRepository<Feed> {
     private static final String SELECT_FEED_BY_USER_SQL = """
             SELECT * FROM user_feed
             WHERE user_id = ?
-            ORDER BY timestamp DESC
+            ORDER BY timestamp
             LIMIT ?
             OFFSET ?
         """;
