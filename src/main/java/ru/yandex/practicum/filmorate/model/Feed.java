@@ -1,19 +1,15 @@
 package ru.yandex.practicum.filmorate.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 public class Feed {
-    private Long timestamp;
-    private int userId;
-    private EventType eventType;
-    private OperationType operation;
-    private int eventId;
-    private int entityId;
+    private final Long timestamp;
+    private final long userId;
+    private final EventType eventType;
+    private final Operation operation;
+    private final long eventId;
+    private final long entityId;
 
     public enum EventType {
         LIKE,
@@ -21,7 +17,7 @@ public class Feed {
         FRIEND
     }
 
-    public enum OperationType {
+    public enum Operation {
         ADD,
         REMOVE,
         UPDATE

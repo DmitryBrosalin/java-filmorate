@@ -89,13 +89,7 @@ public class UserService {
                 }
             }
         }
-
         suggestedUserLikes.removeAll(targetUserLikes);
-
-        List<Film> films = new ArrayList<>();
-        for (long id : suggestedUserLikes) {
-            films.add(filmRepository.findById(id));
-        }
-        return films;
+        return (List<Film>) filmRepository.getAllFilmsByIds(suggestedUserLikes);
     }
 }

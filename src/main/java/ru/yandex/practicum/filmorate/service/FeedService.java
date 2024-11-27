@@ -1,30 +1,20 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dal.FeedRepository;
 import ru.yandex.practicum.filmorate.model.Feed;
 
-import java.util.List;
+import java.util.Collection;
+
 
 @Service
+@RequiredArgsConstructor
 public class FeedService {
 
     private final FeedRepository feedRepository;
 
-    public FeedService(FeedRepository feedRepository) {
-        this.feedRepository = feedRepository;
-    }
-
-    public List<Feed> getFeed(int userId) {
-        return feedRepository.getEventsByUserId(userId);
-    }
-
-    public void addEvent(Feed feed) {
-        if (feed.getEventType() == null || feed.getOperation() == null) {
-            throw new IllegalArgumentException("EventType and OperationType must be specified.");
-        }
-
-        feedRepository.addEvent(feed);
+    public Collection<Feed> getUserFeed(int userId, int limit, int offset) {
+        return feedRepository.getUserFeed(userId, limit, offset);
     }
 }
-

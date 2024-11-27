@@ -2,62 +2,67 @@ package ru.yandex.practicum.filmorate.dal;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.dal.mapper.FeedRowMapper;
 import ru.yandex.practicum.filmorate.model.Feed;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.List;
+import java.time.Instant;
+import java.util.Collection;
 
 @Repository
-public class FeedRepository {
-    private final JdbcTemplate jdbcTemplate;
+public class FeedRepository extends BaseRepository<Feed> {
 
-    private static final String INSERT_FEED_QUERY = """
-            INSERT INTO feed (timestamp, user_id, eventType, operation, event_id, entity_id)
-            VALUES (?, ?, ?::event_type, ?::operation_type, ?, ?)
-            """;
+    private static final String INSERT_EVENT_SQL = """
+            INSERT INTO user_feed (timestamp, user_id, event_type, operation, entity_id)
+            VALUES (?, ?, ?, ?, ?)
+        """;
 
-    private static final String SELECT_FEEDS_BY_USER_ID_QUERY = """
-            SELECT event_id, timestamp, user_id, eventType, operation, entity_id
-            FROM feed
+    private static final String SELECT_FEED_BY_USER_SQL = """
+            SELECT * FROM user_feed
             WHERE user_id = ?
             ORDER BY timestamp DESC
-            """;
+            LIMIT ?
+            OFFSET ?
+        """;
 
-    public FeedRepository(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    public FeedRepository(JdbcTemplate jdbcTemplate, FeedRowMapper feedRowMapper) {
+        super(jdbcTemplate, feedRowMapper);
     }
 
-    public void addEvent(Feed feed) {
-        jdbcTemplate.update(
-                INSERT_FEED_QUERY,
-                feed.getTimestamp(),
-                feed.getUserId(),
-                feed.getEventType().name(),
-                feed.getOperation().name(),
-                feed.getEventId(),
-                feed.getEntityId()
-        );
+    public void addEvent(long userId, Feed.EventType eventType, Feed.Operation operation, long entityId) {
+        long timestamp = Instant.now().toEpochMilli();
+        Object[] params = new Object[] { timestamp, userId, eventType.name(), operation.name(), entityId };
+        insert(INSERT_EVENT_SQL, params);
     }
 
-    public List<Feed> getEventsByUserId(int userId) {
-        return jdbcTemplate.query(
-                SELECT_FEEDS_BY_USER_ID_QUERY,
-                (rs, rowNum) -> mapRowToFeed(rs),
-                userId
-        );
+    public Collection<Feed> getUserFeed(long userId, int limit, int offset) {
+        return findMany(SELECT_FEED_BY_USER_SQL, userId, limit, offset);
     }
 
-    private Feed mapRowToFeed(ResultSet rs) throws SQLException {
-        return new Feed(
-                rs.getTimestamp("timestamp").getTime(),
-                rs.getInt("user_id"),
-                Feed.EventType.valueOf(rs.getString("eventType")),
-                Feed.OperationType.valueOf(rs.getString("operation")),
-                rs.getInt("event_id"),
-                rs.getInt("entity_id")
-        );
+    public void addLikeEvent(long userId, long entityId) {
+        addEvent(userId, Feed.EventType.LIKE, Feed.Operation.ADD, entityId);
+    }
+
+    public void removeLikeEvent(long userId, long entityId) {
+        addEvent(userId, Feed.EventType.LIKE, Feed.Operation.REMOVE, entityId);
+    }
+
+    public void addReviewEvent(long userId, long entityId) {
+        addEvent(userId, Feed.EventType.REVIEW, Feed.Operation.ADD, entityId);
+    }
+
+    public void updateReviewEvent(long userId, long entityId) {
+        addEvent(userId, Feed.EventType.REVIEW, Feed.Operation.UPDATE, entityId);
+    }
+
+    public void removeReviewEvent(long userId, long entityId) {
+        addEvent(userId, Feed.EventType.REVIEW, Feed.Operation.REMOVE, entityId);
+    }
+
+    public void addFriendEvent(long userId, long entityId) {
+        addEvent(userId, Feed.EventType.FRIEND, Feed.Operation.ADD, entityId);
+    }
+
+    public void removeFriendEvent(long userId, long entityId) {
+        addEvent(userId, Feed.EventType.FRIEND, Feed.Operation.REMOVE, entityId);
     }
 }
-
-

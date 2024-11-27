@@ -1,12 +1,13 @@
 package ru.yandex.practicum.filmorate.dal;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dal.mapper.UserRowMapper;
 import ru.yandex.practicum.filmorate.exception.BadRequestException;
+import ru.yandex.practicum.filmorate.exception.InternalServerException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.model.*;
-import ru.yandex.practicum.filmorate.service.FeedService;
+import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.Date;
 import java.util.List;
@@ -28,18 +29,18 @@ public class UserRepository extends BaseRepository<User> {
             "(SELECT friend_id FROM friends WHERE user_id = ?)";
     private static final String DELETE_USER_QUERY = "DELETE FROM users WHERE user_id = ?";
 
-    private final FeedService feedService;
+    private final FeedRepository feedRepository;
 
-    public UserRepository(JdbcTemplate jdbc, UserRowMapper mapper, FeedService feedService) {
+    public UserRepository(JdbcTemplate jdbc, UserRowMapper mapper, FeedRepository feedRepository) {
         super(jdbc, mapper);
-        this.feedService = feedService;
+        this.feedRepository = feedRepository;
     }
 
     public User findById(long userId) {
         Optional<User> userOpt = findOne(FIND_BY_ID_QUERY, userId);
         if (userOpt.isPresent()) {
             User user = userOpt.get();
-            for (User friend : findFriends(userId)) {
+            for (User friend: findFriends(userId)) {
                 user.getFriends().add(friend.getId());
             }
             return user;
@@ -51,9 +52,7 @@ public class UserRepository extends BaseRepository<User> {
     public List<User> findAll() {
         return findMany(FIND_ALL_QUERY).stream()
                 .peek(user -> {
-                    for (User friend : findFriends(user.getId()))
-                        user.getFriends().add(friend.getId());
-                })
+                    for (User friend: findFriends(user.getId())) user.getFriends().add(friend.getId()); })
                 .collect(Collectors.toList());
     }
 
@@ -82,42 +81,28 @@ public class UserRepository extends BaseRepository<User> {
 
     public void addFriend(long userId, long friendId) {
         if (findOne(FIND_BY_ID_QUERY, userId).isEmpty() || findOne(FIND_BY_ID_QUERY, friendId).isEmpty()) {
-            throw new NotFoundException("Пользователь с id = " + userId + " или friendId = " + friendId + " не найден.");
+            throw new NotFoundException("Пользователь с id = " + userId + " не найден.");
         }
 
         try {
             insertPair(INSERT_FRIEND_QUERY, userId, friendId);
-
-            feedService.addEvent(new Feed(
-                    System.currentTimeMillis(),
-                    (int) userId,
-                    Feed.EventType.FRIEND,
-                    Feed.OperationType.ADD,
-                    0,
-                    (int) friendId
-            ));
-        } catch (RuntimeException e) {
+            feedRepository.addFriendEvent(userId, friendId);
+            feedRepository.addFriendEvent(friendId, userId);
+        } catch (DataIntegrityViolationException e) {
             throw new BadRequestException("Пользователь " + userId + " уже добавил в друзья пользователя " + friendId);
+        } catch (RuntimeException e) {
+            throw new InternalServerException("Ошибка при добавлении друга пользователя " + friendId + " пользователем " + userId);
         }
     }
 
     public void deleteFriend(long userId, long friendId) {
         if (findOne(FIND_BY_ID_QUERY, userId).isEmpty() || findOne(FIND_BY_ID_QUERY, friendId).isEmpty()) {
-            throw new NotFoundException("Пользователь с id = " + userId + " или friendId = " + friendId + " не найден.");
+            throw new NotFoundException("Пользователь с id = " + userId + " не найден.");
         }
-
         delete(DELETE_FRIEND_QUERY, userId, friendId);
-
-        feedService.addEvent(new Feed(
-                System.currentTimeMillis(),
-                (int) userId,
-                Feed.EventType.FRIEND,
-                Feed.OperationType.REMOVE,
-                0,
-                (int) friendId
-        ));
+        feedRepository.removeFriendEvent(userId, friendId);
+        feedRepository.removeFriendEvent(friendId, userId);
     }
-
 
     public List<User> findFriends(long userId) {
         if (findOne(FIND_BY_ID_QUERY, userId).isEmpty()) {
@@ -125,9 +110,7 @@ public class UserRepository extends BaseRepository<User> {
         }
         return findMany(FIND_ALL_FRIENDS_QUERY, userId).stream()
                 .peek(user -> {
-                    for (User friend : findFriends(user.getId()))
-                        user.getFriends().add(friend.getId());
-                })
+                    for (User friend: findFriends(user.getId())) user.getFriends().add(friend.getId()); })
                 .collect(Collectors.toList());
     }
 
