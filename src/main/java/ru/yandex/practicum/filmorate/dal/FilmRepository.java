@@ -39,6 +39,23 @@ public class FilmRepository extends BaseRepository<Film> {
             "GROUP BY (film_id) \n" +
             "ORDER BY COUNT (film_id) DESC \n" +
             "LIMIT ?);";
+    private static final String FIND_POPULAR_BY_GENRE = "SELECT *\n" +
+            "FROM films f \n" +
+            "JOIN film_genres f2 ON f.film_id = f2.film_id \n" +
+            "JOIN genres g ON f2.genre_id = g.genre_id \n" +
+            "WHERE f2.genre_id = ? AND f.film_id IN (SELECT DISTINCT film_id \n" +
+            "FROM likes \n" +
+            "GROUP BY (film_id) \n" +
+            "ORDER BY COUNT (film_id) DESC \n" +
+            "LIMIT ?);";
+    private static final String FIND_POPULAR_BY_YEAR = "SELECT *\n" +
+            "FROM films f \n" +
+            "WHERE EXTRACT(YEAR FROM f.release_date) = ? \n" +
+            "AND f.film_id IN (SELECT DISTINCT film_id \n" +
+            "FROM likes \n" +
+            "GROUP BY (film_id) \n" +
+            "ORDER BY COUNT (film_id) DESC \n" +
+            "LIMIT ?);";
     private static final String DELETE_FILM_QUERY = "DELETE FROM films WHERE (film_id = ?)";
     private static final String FIND_COMMON_FILMS = "SELECT *\n" +
             "FROM films AS f\n" +
@@ -199,21 +216,30 @@ public class FilmRepository extends BaseRepository<Film> {
     public void addLike(long filmId, long userId) {
         try {
             insertPair(INSERT_LIKE_QUERY, filmId, userId);
+        } catch (DataIntegrityViolationException ignored) {
+        } finally {
             feedRepository.addLikeEvent(userId, filmId);
-        } catch (DataIntegrityViolationException e) {
-            throw new BadRequestException("Пользователь " + userId + " уже поставил лайк фильму " + filmId);
         }
     }
 
     public Collection<Film> getPopularFilms(long size, Integer genreId, Integer year) {
-        if (genreId == null || year == null) {
+        if (genreId == null && year == null) {
             return findMany(FIND_POPULAR_QUERY, size).stream()
                     .peek(this::prepareForResponse)
                     .collect(Collectors.toList());
+        } else if (genreId != null && year == null) {
+            return findMany(FIND_POPULAR_BY_GENRE, genreId, size).stream()
+                    .peek(this::prepareForResponse)
+                    .collect(Collectors.toList());
+        } else if (genreId == null && year != null) {
+            return findMany(FIND_POPULAR_BY_YEAR, year, size).stream()
+                    .peek(this::prepareForResponse)
+                    .collect(Collectors.toList());
+        } else {
+            return findMany(FIND_POPULAR_BY_GENRE_AND_YEAR, year, genreId, size).stream()
+                    .peek(this::prepareForResponse)
+                    .collect(Collectors.toList());
         }
-        return findMany(FIND_POPULAR_BY_GENRE_AND_YEAR, year, genreId, size).stream()
-                .peek(this::prepareForResponse)
-                .collect(Collectors.toList());
     }
 
     public void deleteLike(long filmId, long userId) {

@@ -8,10 +8,12 @@ import ru.yandex.practicum.filmorate.dal.mapper.UserRowMapper;
 import ru.yandex.practicum.filmorate.exception.BadRequestException;
 import ru.yandex.practicum.filmorate.exception.InternalServerException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.Feed;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.Date;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -128,5 +130,10 @@ public class UserRepository extends BaseRepository<User> {
 
     public void deleteUser(long userId) {
         delete(DELETE_USER_QUERY, userId);
+    }
+
+    public Collection<Feed> getUserFeed(int userId, int limit, int offset) {
+        findById(userId);
+        return feedRepository.getUserFeed(userId, limit, offset);
     }
 }

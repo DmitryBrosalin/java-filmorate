@@ -77,7 +77,7 @@ public class ReviewRepository extends BaseRepository<Review> {
 
             feedRepository.updateReviewEvent(existingReview.get().getUserId(), existingReview.get().getReviewId());
         }
-        return review;
+        return getReview(review.getReviewId());
     }
 
     public void removeReview(long id) {
@@ -123,7 +123,7 @@ public class ReviewRepository extends BaseRepository<Review> {
             if (likeStatus == 1) {
                 throw new BadRequestException("Пользователь " + userId + " уже поставил лайк отзыву " + reviewId);
             } else if (likeStatus == -1) {
-                removeDislike(reviewId, userId);
+                delete(DELETE_LIKE_QUERY, reviewId, userId);
             }
         }
         update(UPDATE_USEFUL_PLUS_QUERY, reviewId);
@@ -142,10 +142,10 @@ public class ReviewRepository extends BaseRepository<Review> {
             insertPair(INSERT_DISLIKE_QUERY, reviewId, userId);
         } catch (RuntimeException e) {
             int likeStatus = jdbc.queryForObject(FIND_LIKE_STATUS, Integer.class, reviewId, userId);
-            if (likeStatus == 11) {
+            if (likeStatus == -1) {
                 throw new BadRequestException("Пользователь " + userId + " уже поставил дизлайк отзыву " + reviewId);
             } else if (likeStatus == 1) {
-                removeLike(reviewId, userId);
+                delete(DELETE_LIKE_QUERY, reviewId, userId);
             }
         }
         update(UPDATE_USEFUL_MINUS_QUERY, reviewId);

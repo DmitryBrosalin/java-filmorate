@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.Feed;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.service.FeedService;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.Collection;
@@ -20,7 +19,6 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
-    private final FeedService feedService;
 
     @GetMapping
     public Collection<User> getUsers() {
@@ -80,7 +78,7 @@ public class UserController {
             @PathVariable("id") int userId,
             @RequestParam(value = "limit", defaultValue = "20") int limit,
             @RequestParam(value = "offset", defaultValue = "0") int offset) {
-        Collection<Feed> feed = feedService.getUserFeed(userId, limit, offset);
+        Collection<Feed> feed = userService.getUserFeed(userId, limit, offset);
         return new ResponseEntity<>(feed, HttpStatus.OK);
     }
 }

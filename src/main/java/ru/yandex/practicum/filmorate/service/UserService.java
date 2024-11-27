@@ -5,6 +5,7 @@ import ru.yandex.practicum.filmorate.dal.FilmRepository;
 import ru.yandex.practicum.filmorate.dal.LikesRepository;
 import ru.yandex.practicum.filmorate.dal.UserRepository;
 import ru.yandex.practicum.filmorate.dto.UserFilmDto;
+import ru.yandex.practicum.filmorate.model.Feed;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 
@@ -94,5 +95,9 @@ public class UserService {
         }
         suggestedUserLikes.removeAll(targetUserLikes);
         return (List<Film>) filmRepository.getAllFilmsByIds(suggestedUserLikes);
+    }
+
+    public Collection<Feed> getUserFeed(int userId, int limit, int offset) {
+        return userRepository.getUserFeed(userId, limit, offset);
     }
 }
