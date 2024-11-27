@@ -14,6 +14,7 @@ import java.util.Optional;
 public class ReviewRepository extends BaseRepository<Review> {
     private final UserRepository userRepository;
     private final FilmRepository filmRepository;
+    private final FeedRepository feedRepository;
     private static final String INSERT_REVIEW = "INSERT INTO review (content, is_positive, user_id, film_id, useful) " +
             "VALUES (?, ?, ?, ?, ?)";
     private static final String UPDATE_QUERY = "UPDATE review SET content = ?, is_positive = ?, user_id = ?, " +
@@ -28,10 +29,11 @@ public class ReviewRepository extends BaseRepository<Review> {
     private static final String INSERT_DISLIKE_QUERY = "INSERT INTO review_likes (review_id, user_id, like_status) VALUES (?, ?, -1)";
     private static final String FIND_LIKE_STATUS = "SELECT like_status FROM review_likes WHERE review_id = ? AND user_id = ?";
 
-    public ReviewRepository(JdbcTemplate jdbc, RowMapper<Review> mapper, UserRepository userRepository, FilmRepository filmRepository) {
+    public ReviewRepository(JdbcTemplate jdbc, RowMapper<Review> mapper, UserRepository userRepository, FilmRepository filmRepository, FeedRepository feedRepository) {
         super(jdbc, mapper);
         this.userRepository = userRepository;
         this.filmRepository = filmRepository;
+        this.feedRepository = feedRepository;
     }
 
     public Review addReview(Review review) {
@@ -49,6 +51,8 @@ public class ReviewRepository extends BaseRepository<Review> {
                     review.getFilmId(),
                     review.getUseful());
             review.setReviewId(id);
+
+            feedRepository.addReviewEvent(review.getUserId(), id);
         }
         return review;
     }
@@ -59,7 +63,8 @@ public class ReviewRepository extends BaseRepository<Review> {
                 || review.getIsPositive() == null) {
             throw new BadRequestException("Некорректное тело запроса");
         }
-        if (findOne(FIND_BY_ID_QUERY, review.getReviewId()).isEmpty()) {
+        Optional<Review> existingReview = findOne(FIND_BY_ID_QUERY, review.getReviewId());
+        if (existingReview.isEmpty()) {
             throw new NotFoundException("Отзыв с id = " + review.getReviewId() + " не найден.");
         }
         if (filmRepository.findById(review.getFilmId()) != null
@@ -71,12 +76,20 @@ public class ReviewRepository extends BaseRepository<Review> {
                     review.getFilmId(),
                     review.getUseful(),
                     review.getReviewId());
+
+            feedRepository.updateReviewEvent(review.getUserId(), review.getReviewId());
         }
         return review;
     }
 
     public void removeReview(long id) {
+        Optional<Review> existingReview = findOne(FIND_BY_ID_QUERY, id);
+        if (existingReview.isEmpty()) {
+            throw new NotFoundException("Отзыв с id = " + id + " не найден.");
+        }
         delete(DELETE_REVIEW_QUERY, id);
+
+        feedRepository.removeReviewEvent(existingReview.get().getUserId(), id);
     }
 
     public Collection<Review> getReviews(long filmId) {
