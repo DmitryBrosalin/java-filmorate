@@ -37,32 +37,4 @@ public class FeedRepository extends BaseRepository<Feed> {
     public Collection<Feed> getUserFeed(long userId, int limit, int offset) {
         return findMany(SELECT_FEED_BY_USER_SQL, userId, limit, offset);
     }
-
-    public void addLikeEvent(long userId, long entityId) {
-        addEvent(userId, Feed.EventType.LIKE, Feed.Operation.ADD, entityId);
-    }
-
-    public void removeLikeEvent(long userId, long entityId) {
-        addEvent(userId, Feed.EventType.LIKE, Feed.Operation.REMOVE, entityId);
-    }
-
-    public void addReviewEvent(long userId, long entityId) {
-        addEvent(userId, Feed.EventType.REVIEW, Feed.Operation.ADD, entityId);
-    }
-
-    public void updateReviewEvent(long userId, long entityId) {
-        addEvent(userId, Feed.EventType.REVIEW, Feed.Operation.UPDATE, entityId);
-    }
-
-    public void removeReviewEvent(long userId, long entityId) {
-        addEvent(userId, Feed.EventType.REVIEW, Feed.Operation.REMOVE, entityId);
-    }
-
-    public void addFriendEvent(long userId, long entityId) {
-        addEvent(userId, Feed.EventType.FRIEND, Feed.Operation.ADD, entityId);
-    }
-
-    public void removeFriendEvent(long userId, long entityId) {
-        addEvent(userId, Feed.EventType.FRIEND, Feed.Operation.REMOVE, entityId);
-    }
 }

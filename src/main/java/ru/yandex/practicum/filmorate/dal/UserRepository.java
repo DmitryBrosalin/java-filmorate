@@ -91,7 +91,7 @@ public class UserRepository extends BaseRepository<User> {
 
         try {
             insertPair(INSERT_FRIEND_QUERY, userId, friendId);
-            feedRepository.addFriendEvent(userId, friendId);
+            feedRepository.addEvent(userId, Feed.EventType.FRIEND, Feed.Operation.ADD, friendId);
         } catch (DataIntegrityViolationException e) {
             throw new BadRequestException("Пользователь " + userId + " уже добавил в друзья пользователя " + friendId);
         } catch (RuntimeException e) {
@@ -104,7 +104,7 @@ public class UserRepository extends BaseRepository<User> {
             throw new NotFoundException("Пользователь с id = " + userId + " не найден.");
         }
         delete(DELETE_FRIEND_QUERY, userId, friendId);
-        feedRepository.removeFriendEvent(userId, friendId);
+        feedRepository.addEvent(userId, Feed.EventType.FRIEND, Feed.Operation.REMOVE, friendId);
     }
 
     public List<User> findFriends(long userId) {

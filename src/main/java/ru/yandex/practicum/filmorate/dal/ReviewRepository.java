@@ -5,6 +5,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exception.BadRequestException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.Feed;
 import ru.yandex.practicum.filmorate.model.Review;
 
 import java.util.Collection;
@@ -24,11 +25,12 @@ public class ReviewRepository extends BaseRepository<Review> {
     private static final String LIMIT_QUERY = " LIMIT ?";
     private static final String FIND_ALL_QUERY = "SELECT * FROM review ORDER BY useful DESC ";
     private static final String INSERT_LIKE_QUERY = "INSERT INTO review_likes (review_id, user_id, like_status) VALUES (?, ?, 1)";
+    private static final String UPDATE_LIKE_QUERY = "UPDATE review_likes SET like_status = 1 WHERE (review_id = ? AND user_id = ?)";
+    private static final String UPDATE_DISLIKE_QUERY = "UPDATE review_likes SET like_status = -1 WHERE (review_id = ? AND user_id = ?)";
     private static final String UPDATE_USEFUL_PLUS_QUERY = "UPDATE review SET useful = useful + 1 WHERE review_id = ?";
     private static final String UPDATE_USEFUL_MINUS_QUERY = "UPDATE review SET useful = useful - 1 WHERE review_id = ?";
     private static final String DELETE_LIKE_QUERY = "DELETE FROM review_likes WHERE review_id = ? AND user_id = ?";
     private static final String INSERT_DISLIKE_QUERY = "INSERT INTO review_likes (review_id, user_id, like_status) VALUES (?, ?, -1)";
-    private static final String FIND_LIKE_STATUS = "SELECT like_status FROM review_likes WHERE review_id = ? AND user_id = ?";
 
     public ReviewRepository(JdbcTemplate jdbc, RowMapper<Review> mapper, UserRepository userRepository, FilmRepository filmRepository, FeedRepository feedRepository) {
         super(jdbc, mapper);
@@ -39,8 +41,7 @@ public class ReviewRepository extends BaseRepository<Review> {
 
     public Review addReview(Review review) {
         if (review.getFilmId() == 0
-                || review.getUserId() == 0
-                || review.getIsPositive() == null) {
+                || review.getUserId() == 0) {
             throw new BadRequestException("Некорректное тело запроса");
         }
         if (filmRepository.findById(review.getFilmId()) != null
@@ -53,15 +54,14 @@ public class ReviewRepository extends BaseRepository<Review> {
                     review.getUseful());
             review.setReviewId(id);
 
-            feedRepository.addReviewEvent(review.getUserId(), id);
+            feedRepository.addEvent(review.getUserId(), Feed.EventType.REVIEW, Feed.Operation.ADD, id);
         }
         return review;
     }
 
     public Review updateReview(Review review) {
         if (review.getFilmId() == 0
-                || review.getUserId() == 0
-                || review.getIsPositive() == null) {
+                || review.getUserId() == 0) {
             throw new BadRequestException("Некорректное тело запроса");
         }
         Optional<Review> existingReview = findOne(FIND_BY_ID_QUERY, review.getReviewId());
@@ -75,7 +75,8 @@ public class ReviewRepository extends BaseRepository<Review> {
                     review.getIsPositive(),
                     review.getReviewId());
 
-            feedRepository.updateReviewEvent(existingReview.get().getUserId(), existingReview.get().getReviewId());
+            feedRepository.addEvent(existingReview.get().getUserId(), Feed.EventType.REVIEW,
+                    Feed.Operation.UPDATE, existingReview.get().getReviewId());
         }
         return getReview(review.getReviewId());
     }
@@ -87,7 +88,7 @@ public class ReviewRepository extends BaseRepository<Review> {
         }
         delete(DELETE_REVIEW_QUERY, id);
 
-        feedRepository.removeReviewEvent(existingReview.get().getUserId(), id);
+        feedRepository.addEvent(existingReview.get().getUserId(), Feed.EventType.REVIEW, Feed.Operation.REMOVE, id);
     }
 
     public Collection<Review> getReviews(Long filmId, Long count) {
@@ -119,12 +120,7 @@ public class ReviewRepository extends BaseRepository<Review> {
         try {
             insertPair(INSERT_LIKE_QUERY, reviewId, userId);
         } catch (RuntimeException e) {
-            int likeStatus = jdbc.queryForObject(FIND_LIKE_STATUS, Integer.class, reviewId, userId);
-            if (likeStatus == 1) {
-                throw new BadRequestException("Пользователь " + userId + " уже поставил лайк отзыву " + reviewId);
-            } else if (likeStatus == -1) {
-                delete(DELETE_LIKE_QUERY, reviewId, userId);
-            }
+            update(UPDATE_LIKE_QUERY, reviewId, userId);
         }
         update(UPDATE_USEFUL_PLUS_QUERY, reviewId);
         return getReview(reviewId);
@@ -141,12 +137,7 @@ public class ReviewRepository extends BaseRepository<Review> {
         try {
             insertPair(INSERT_DISLIKE_QUERY, reviewId, userId);
         } catch (RuntimeException e) {
-            int likeStatus = jdbc.queryForObject(FIND_LIKE_STATUS, Integer.class, reviewId, userId);
-            if (likeStatus == -1) {
-                throw new BadRequestException("Пользователь " + userId + " уже поставил дизлайк отзыву " + reviewId);
-            } else if (likeStatus == 1) {
-                delete(DELETE_LIKE_QUERY, reviewId, userId);
-            }
+            update(UPDATE_DISLIKE_QUERY, reviewId, userId);
         }
         update(UPDATE_USEFUL_MINUS_QUERY, reviewId);
         return getReview(reviewId);

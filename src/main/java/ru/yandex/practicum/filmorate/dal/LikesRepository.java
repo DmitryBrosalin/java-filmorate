@@ -5,7 +5,7 @@ import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dal.mapper.UserFilmMapper;
 import ru.yandex.practicum.filmorate.dto.UserFilmDto;
 
-import java.util.Collection;
+import java.util.List;
 
 @Repository
 public class LikesRepository extends BaseRepository<UserFilmDto> {
@@ -15,7 +15,7 @@ public class LikesRepository extends BaseRepository<UserFilmDto> {
         super(jdbc, mapper);
     }
 
-    public Collection<UserFilmDto> getAllLikes() {
+    public List<UserFilmDto> getAllLikes() {
         return findMany(FIND_ALL_QUERY);
     }
 

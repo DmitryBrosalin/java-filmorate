@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 public class FilmRepository extends BaseRepository<Film> {
     private static final String FIND_ALL_QUERY = "SELECT * FROM films";
     private static final String FIND_BY_ID_QUERY = "SELECT * FROM films WHERE film_id = ?";
+    private static final String FIND_BY_IDS_QUERY = "SELECT * FROM films WHERE film_id IN (%s)";
     private static final String INSERT_QUERY = "INSERT INTO films (title, description, release_date, " +
             "duration, mpa_id) VALUES (?, ?, ?, ?, ?)";
     private static final String UPDATE_QUERY = "UPDATE films SET title = ?, description = ?, release_date = ?, " +
@@ -89,6 +90,9 @@ public class FilmRepository extends BaseRepository<Film> {
                     "WHERE film_id IN (SELECT film_id\n" +
                     "FROM FILM_DIRECTORS fd\n" +
                     "WHERE fd.DIRECTOR_ID = ?)";
+    private static final String FIND_FILMS_BY_DIRECTORS_IDS = "SELECT * FROM films AS f " +
+            "WHERE film_id IN (SELECT film_id FROM FILM_DIRECTORS fd " +
+            "WHERE fd.DIRECTOR_ID IN (%s))";
     private final GenreRepository genreRepository;
     private final UserRepository userRepository;
     private final MpaRepository mpaRepository;
@@ -218,7 +222,7 @@ public class FilmRepository extends BaseRepository<Film> {
             insertPair(INSERT_LIKE_QUERY, filmId, userId);
         } catch (DataIntegrityViolationException ignored) {
         } finally {
-            feedRepository.addLikeEvent(userId, filmId);
+            feedRepository.addEvent(userId, Feed.EventType.LIKE, Feed.Operation.ADD, filmId);
         }
     }
 
@@ -244,7 +248,7 @@ public class FilmRepository extends BaseRepository<Film> {
 
     public void deleteLike(long filmId, long userId) {
         delete(DELETE_LIKE_QUERY, filmId, userId);
-        feedRepository.removeLikeEvent(userId, filmId);
+        feedRepository.addEvent(userId, Feed.EventType.LIKE, Feed.Operation.REMOVE, filmId);
     }
 
     public void deleteFilm(long filmId) {
@@ -284,22 +288,9 @@ public class FilmRepository extends BaseRepository<Film> {
                 .collect(Collectors.toList());
     }
 
-    public Collection<Film> getAllFilmsByIds(Set<Long> filmIds) {
-        StringBuilder queryStart = new StringBuilder("SELECT * FROM films WHERE film_id IN (");
-        List<Long> filmsFromSet = new ArrayList<>(filmIds);
-
-        if (filmsFromSet.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        for (int i = 0; i < filmsFromSet.size(); i++) {
-            if (i < filmsFromSet.size() - 1) {
-                queryStart.append(filmsFromSet.get(i)).append(",");
-            } else {
-                queryStart.append(filmsFromSet.get(i)).append(")");
-            }
-        }
-        return findMany(queryStart.toString()).stream()
+    public List<Film> getAllFilmsByIds(Set<Long> filmIds) {
+        return findMany(String.format(FIND_BY_IDS_QUERY, filmIds.toString()
+                .substring(1, filmIds.toString().length() - 1))).stream()
                 .peek(this::prepareForResponse)
                 .collect(Collectors.toList());
     }
@@ -322,28 +313,12 @@ public class FilmRepository extends BaseRepository<Film> {
                 .collect(Collectors.toList());
     }
 
-    public Collection<Film> getAllFilmsByDirectors(List<Director> directorsIds) {
-        if (directorsIds.size() == 1) {
-            return findMany(FIND_FILMS_BY_DIRECTOR_ID, directorsIds.getFirst().getId()).stream()
-                    .peek(this::prepareForResponse)
-                    .collect(Collectors.toList());
-        } else {
-            StringBuilder idsString = new StringBuilder();
-            for (int i = 0; i < directorsIds.size(); i++) {
-                if (i == directorsIds.size() - 1) {
-                    idsString.append(directorsIds.get(i).getId());
-                } else {
-                    idsString.append(directorsIds.get(i).getId()).append(",");
-                }
-            }
-
-            String query = "SELECT * FROM films AS f " +
-                    "WHERE film_id IN (SELECT film_id FROM FILM_DIRECTORS fd " +
-                    "WHERE fd.DIRECTOR_ID IN (" + idsString + "))";
-
-            return findMany(query).stream()
-                    .peek(this::prepareForResponse)
-                    .collect(Collectors.toList());
-        }
+    public List<Film> getAllFilmsByDirectors(List<Director> directors) {
+        List<Long> directorIds = directors.stream().map(Director::getId).toList();
+        return findMany(String.format(FIND_FILMS_BY_DIRECTORS_IDS,
+                                directorIds.toString()
+                                .substring(1, directorIds.toString().length() - 1))).stream()
+                .peek(this::prepareForResponse)
+                .collect(Collectors.toList());
     }
 }

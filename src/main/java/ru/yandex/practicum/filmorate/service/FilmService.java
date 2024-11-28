@@ -16,13 +16,12 @@ public class FilmService {
     private final FilmRepository filmRepository;
     private final UserRepository userRepository;
     private final DirectorRepository directorRepository;
-    private final DirectorService directorService;
+    private static final int DEFAULT_LIMIT_POPULAR_FILMS = 10;
 
-    public FilmService(FilmRepository filmRepository, UserRepository userRepository, DirectorRepository directorRepository, DirectorService directorService) {
+    public FilmService(FilmRepository filmRepository, UserRepository userRepository, DirectorRepository directorRepository) {
         this.filmRepository = filmRepository;
         this.userRepository = userRepository;
         this.directorRepository = directorRepository;
-        this.directorService = directorService;
     }
 
     public void addLike(long filmId, long userId) {
@@ -76,7 +75,7 @@ public class FilmService {
 
     public List<Film> findFilm(Optional<String> query, Optional<List<String>> sortBy) {
         if (query.isEmpty() && sortBy.isEmpty()) {
-            return filmRepository.getPopularFilms(10, null, null).stream().toList();
+            return filmRepository.getPopularFilms(DEFAULT_LIMIT_POPULAR_FILMS, null, null).stream().toList();
         } else if (query.isPresent() && sortBy.isPresent()) {
             List<String> sortByList = sortBy.get();
             if (sortByList.size() == 1) {
@@ -107,7 +106,7 @@ public class FilmService {
     private List<Film> getFilmsFromDirectors(String sortByList, String query) {
         List<Director> directorList = directorRepository.findDirectors(queryBuilder(sortByList, query));
         if (!directorList.isEmpty()) {
-            return (List<Film>) filmRepository.getAllFilmsByDirectors(directorList);
+            return filmRepository.getAllFilmsByDirectors(directorList);
         }
         return Collections.emptyList();
     }

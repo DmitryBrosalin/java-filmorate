@@ -67,7 +67,7 @@ public class UserService {
     }
 
     public List<Film> getRecommendations(long userId) {
-        List<UserFilmDto> likesList = (List<UserFilmDto>) likesRepository.getAllLikes();
+        List<UserFilmDto> likesList = likesRepository.getAllLikes();
         HashMap<Long, Set<Long>> userLikesMap = new HashMap<>();
 
         for (UserFilmDto dto : likesList) {
@@ -94,7 +94,7 @@ public class UserService {
             }
         }
         suggestedUserLikes.removeAll(targetUserLikes);
-        return (List<Film>) filmRepository.getAllFilmsByIds(suggestedUserLikes);
+        return filmRepository.getAllFilmsByIds(suggestedUserLikes);
     }
 
     public Collection<Feed> getUserFeed(int userId, int limit, int offset) {
