@@ -6,6 +6,8 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/films")
@@ -22,8 +24,10 @@ public class FilmController {
     }
 
     @GetMapping(value = "/popular")
-    public Collection<Film> getPopularFilms(@RequestParam(defaultValue = "10") long count) {
-        return filmService.getPopularFilms(count);
+    public Collection<Film> getPopularFilms(@RequestParam(defaultValue = "10") long count,
+                                            @RequestParam(required = false) Integer genreId,
+                                            @RequestParam(required = false) Integer year) {
+        return filmService.getPopularFilms(count, genreId, year);
     }
 
     @GetMapping(value = "/{id}")
@@ -49,7 +53,30 @@ public class FilmController {
 
     @DeleteMapping(value = "/{id}/like/{userId}")
     public void deleteLike(@PathVariable long id,
-                        @PathVariable long userId) {
+                           @PathVariable long userId) {
         filmService.deleteLike(id, userId);
+    }
+
+    @GetMapping(value = "/common")
+    public Collection<Film> getCommonFilms(@RequestParam long userId,
+                                           @RequestParam long friendId) {
+        return filmService.getCommonFilms(userId, friendId);
+    }
+
+    @DeleteMapping(value = "/{id}")
+    public void deleteLike(@PathVariable long id) {
+        filmService.deleteFilm(id);
+    }
+
+    @GetMapping("/director/{directorId}")
+    public Collection<Film> getFilmsByDirector(@PathVariable final long directorId,
+                                               @RequestParam String sortBy) {
+        return filmService.getFilmsByDirector(directorId, sortBy);
+    }
+
+    @GetMapping(value = "/search")
+    public Collection<Film> findFilm(@RequestParam Optional<String> query,
+                                     @RequestParam Optional<List<String>> by) {
+        return filmService.findFilm(query, by);
     }
 }
